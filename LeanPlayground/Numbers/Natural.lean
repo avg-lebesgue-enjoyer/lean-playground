@@ -19,5 +19,11 @@ end Numbers
 
 /- LAUNCH: List of results -/
 namespace Numbers.ℕ
+  -- SECTION: Notation
   #check lem_zero_eq_0
+  #check lem_succ_zero_eq_1
+
+  /- SECTION: Results yet to be proven
+
+  -/
 end Numbers.ℕ
