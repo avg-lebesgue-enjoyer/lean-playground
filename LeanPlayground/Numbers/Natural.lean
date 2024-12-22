@@ -311,20 +311,6 @@ namespace ℕ
 
     -- To use `≤` in `calc` blocks
     instance : Trans ℕ.le ℕ.le ℕ.le where trans := le.trans
-    -- instance : Trans (· = · : ℕ → ℕ → Prop) ℕ.le ℕ.le where
-    --   trans := by
-    --     intro a b c h_a_eq_b h_b_le_c
-    --     let ⟨δ, h_δ⟩ := h_b_le_c
-    --     exists δ
-    --     rw [h_a_eq_b]
-    --     assumption
-    -- instance : Trans ℕ.le (· = · : ℕ → ℕ → Prop) ℕ.le where
-    --   trans := by
-    --     intro a b c h_a_le_b h_b_eq_c
-    --     let ⟨δ, h_δ⟩ := h_a_le_b
-    --     exists δ
-    --     rw [←h_b_eq_c]
-    --     assumption
 
     -- Lemmas to show respects addition
     theorem le_add_right
@@ -352,16 +338,76 @@ namespace ℕ
           ℕ.le _ (a + δ + b + ε) := le_add_right
           _ = (a + δ) + (b + ε) := by rw [add.thm_assoc]
           _ = x + y := by rw [h_δ, h_ε]
-    -- TODO: Respects multiplication
-    #check Nat.mul_le_mul
 
-    -- TODO: Define `<`
+    -- Respects multiplication
+    theorem mul_le_mul
+      {a b x y : ℕ}
+      (h_ax : a ≤ x)
+      (h_by : b ≤ y)
+      : a * b ≤ x * y :=
+        let ⟨δ, h_δ⟩ := h_ax
+        let ⟨ε, h_ε⟩ := h_by
+        have h : x * y = a * b + (δ * b + a * ε + δ * ε) := calc x * y
+          _ = (a + δ) * (b + ε)                 := by rw [h_δ, h_ε]
+          _ = (a + δ) * b + (a + δ) * ε         := by apply mul.thm_mul_add
+          _ = (a * b + δ * b) + (a * ε + δ * ε) := by rw [mul.thm_add_mul, mul.thm_add_mul]
+          _ = a * b + (δ * b + a * ε + δ * ε)   := by rw [←add.thm_assoc, add.thm_assoc (δ * b)]
+        let φ := δ * b + a * ε + δ * ε
+        show ∃ φ, x * y = a * b + φ from ⟨φ, h⟩
+
+    -- `succ` is monotone increasing
+    theorem succ_le_strong_hom
+      {x y : ℕ}
+      : x ≤ y ↔ x.succ ≤ y.succ
+      := by
+        have h_succ_as_add_1 : ∀ {a : ℕ}, a.succ = a + 1 := rfl
+        constructor
+        case mp =>
+          intro
+          rw [h_succ_as_add_1, h_succ_as_add_1]
+          have : (1 : ℕ) ≤ 1 := le.refl
+          apply add_le_add <;> assumption
+        case mpr =>
+          intro ⟨δ, h_δ⟩
+          rw [h_succ_as_add_1, h_succ_as_add_1] at h_δ
+          conv at h_δ => {
+            rhs
+            rw [←add.thm_assoc]
+            rw [add.thm_comm 1 δ]
+            rw [add.thm_assoc]
+          }
+          have h_δ : y = x + δ := add.thm_right_cancel 1 _ _ h_δ
+          show ∃ δ, y = x + δ ; exact ⟨δ, h_δ⟩
+  end le
+  def lt (x : ℕ) (y : ℕ) : Prop := ∃ (δ : ℕ), y = x + δ ∧ δ ≠ 0
+  instance : LT ℕ where lt := ℕ.lt
+  namespace lt
+    theorem succ_lt_strong_hom
+      {x y : ℕ}
+      : x < y ↔ x.succ < y.succ
+      := sorry -- FIXME: Do this!
+
+    theorem trichotomy
+      (x y : ℕ)
+      : x < y ∨ x = y ∨ x > y :=
+        match x, y with
+        | 0, 0 => .inr (.inl rfl)
+        | 0, succ y => .inl $ by
+          exists y.succ
+          constructor
+          · exact (add.lem_0_add y.succ).symm
+          · intro h ; injection h
+        | succ x, 0 => .inr ∘ .inr $ by
+          exists x.succ
+          constructor
+          · exact (add.lem_0_add x.succ).symm
+          · intro h ; injection h
+        | succ x, succ y => sorry -- FIXME: This should come from applying strong hom to each of the three cases granted by the recursive call.
+  end lt
     -- TODO: Show `≤` iff `<` or `=`
     -- TODO: Show `<` iff `≤` and `≠`
 
     -- TODO: Show `WellFounded`ness of `<`
-    #check Trans
-  end le
 end ℕ
 
 end Numbers
