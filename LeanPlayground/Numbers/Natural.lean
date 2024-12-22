@@ -105,6 +105,7 @@ namespace ℕ
   end add
 
 
+
   /- SECTION: Multiplication -/
   def mul (x : ℕ) : ℕ → ℕ
     | 0 => 0
@@ -265,83 +266,102 @@ namespace ℕ
         rw [thm_comm x c, thm_comm y c] at h_eq
         apply thm_left_cancel <;> assumption
   end mul
+
+
+
+  /- SECTION: Order -/
+  def le (x : ℕ) (y : ℕ) : Prop := ∃ (δ : ℕ), y = x + δ
+  instance : LE ℕ where le := ℕ.le
+  namespace le
+    @[simp] theorem ntn : ∀ {x y : ℕ}, x.le y = (x ≤ y) := rfl
+
+    -- Verifying that `ℕ.le` is a partial order
+    @[simp] theorem refl {x : ℕ} : x ≤ x := ⟨0, rfl⟩
+    @[simp] theorem antisymm
+      {x y : ℕ}
+      (h_x_le_y : x ≤ y)
+      (h_y_le_x : y ≤ x)
+      : x = y :=
+        let ⟨δ, h_δ⟩ := h_x_le_y
+        let ⟨ε, h_ε⟩ := h_y_le_x
+        have : x + 0 = x + (δ + ε) := calc x + 0
+          _ = x           := rfl
+          _ = y + ε       := h_ε
+          _ = (x + δ) + ε := by rw [h_δ]
+          _ = x + (δ + ε) := by rw [←add.thm_assoc]
+        have : 0 = δ + ε := add.thm_left_cancel x 0 (δ + ε) this
+        have : ε = 0 := (add.thm_args_0_of_add_0 this.symm).right
+        show x = y from calc x
+          _ = y + ε := h_ε
+          _ = y + 0 := by rw [this]
+          _ = y     := rfl
+    @[simp] theorem trans
+      {x y z : ℕ}
+      (h_xy : x ≤ y)
+      (h_yz : y ≤ z)
+      : x ≤ z
+      :=
+        let ⟨δ, h_δ⟩ := h_xy
+        let ⟨ε, h_ε⟩ := h_yz
+        have : z = x + (δ + ε) := calc z
+          _ = y + ε := by assumption
+          _ = (x + δ) + ε := congrArg (· + ε) (by assumption)
+          _ = x + (δ + ε) := by rw [←add.thm_assoc]
+        show ∃ (φ : ℕ), z = x + φ from ⟨δ + ε, this⟩
+
+    -- To use `≤` in `calc` blocks
+    instance : Trans ℕ.le ℕ.le ℕ.le where trans := le.trans
+    -- instance : Trans (· = · : ℕ → ℕ → Prop) ℕ.le ℕ.le where
+    --   trans := by
+    --     intro a b c h_a_eq_b h_b_le_c
+    --     let ⟨δ, h_δ⟩ := h_b_le_c
+    --     exists δ
+    --     rw [h_a_eq_b]
+    --     assumption
+    -- instance : Trans ℕ.le (· = · : ℕ → ℕ → Prop) ℕ.le where
+    --   trans := by
+    --     intro a b c h_a_le_b h_b_eq_c
+    --     let ⟨δ, h_δ⟩ := h_a_le_b
+    --     exists δ
+    --     rw [←h_b_eq_c]
+    --     assumption
+
+    -- Lemmas to show respects addition
+    theorem le_add_right
+      {x δ : ℕ}
+      : x ≤ x + δ
+      := ⟨δ, rfl⟩
+    theorem le_add_left
+      {x δ : ℕ}
+      : x ≤ δ + x
+      := by
+        rw [ℕ.add.thm_comm]
+        exact le_add_right
+
+    -- Respects addition
+    theorem add_le_add
+      {a b x y : ℕ}
+      (h_ax : a ≤ x)
+      (h_by : b ≤ y)
+      : a + b ≤ x + y :=
+        let ⟨δ, h_δ⟩ := h_ax
+        let ⟨ε, h_ε⟩ := h_by
+        show a + b ≤ x + y from calc a + b
+          ℕ.le _ (a + b + δ) := le_add_right
+          _ = a + δ + b := by rw [←add.thm_assoc, add.thm_comm b δ, add.thm_assoc]
+          ℕ.le _ (a + δ + b + ε) := le_add_right
+          _ = (a + δ) + (b + ε) := by rw [add.thm_assoc]
+          _ = x + y := by rw [h_δ, h_ε]
+    -- TODO: Respects multiplication
+    #check Nat.mul_le_mul
+
+    -- TODO: Define `<`
+    -- TODO: Show `≤` iff `<` or `=`
+    -- TODO: Show `<` iff `≤` and `≠`
+
+    -- TODO: Show `WellFounded`ness of `<`
+    #check Trans
+  end le
 end ℕ
 
 end Numbers
-
-
-
-/- LAUNCH: List of results -/
-namespace Numbers.ℕ
-  -- SECTION: Notation
-  #check ntn_zero_eq_0
-  #check ntn_succ_zero_eq_1
-  #check add.ntn
-  #check mul.ntn
-
-
-
-  -- SECTION: Induction and Well-Ordering
-  #check ℕ.rec
-
-
-
-  -- SECTION: Successor
-  namespace succ
-    #check inj
-    #check zero_not_succ
-  end succ
-
-
-
-  -- SECTION: Addition
-  namespace add
-    #check lem_add_0
-    #check lem_add_succ
-    #check lem_0_add
-    #check lem_succ_add
-
-    #check thm_assoc
-    #check thm_comm
-
-    #check thm_args_0_of_add_0
-    #check arg_1_of_add_1
-    #check thm_right_cancel
-    #check thm_left_cancel
-  end add
-
-
-
-  -- SECTION: Multiplication
-  namespace mul
-    #check lem_mul_0
-    #check lem_mul_succ
-    #check lem_0_mul
-    #check lem_succ_mul
-    #check lem_mul_1
-    #check lem_1_mul
-
-    #check thm_assoc
-    #check thm_comm
-
-    #check thm_mul_add
-    #check thm_add_mul
-
-    #check thm_args_1_of_mul_1
-    #check thm_null_factor
-    #check thm_left_cancel
-    #check thm_right_cancel
-  end mul
-
-  /- SECTION: Results yet to be proven
-    [3.] Order (<, >, ≤ and ≥):
-      (include well-foundedness of `<`)
-      (include well-ordering principle ("strong induction"))
-
-    [4.] Induction from bases other than 0
-      (include "strong" variants)
-
-    [5.] Fundamental Theorem of Arithmetic
-      (it)
-  -/
-end Numbers.ℕ
