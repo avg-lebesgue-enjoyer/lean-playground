@@ -159,20 +159,22 @@ namespace Numbers.ℕ.results
       → ∀ (x : ℕ), P x
       := ℕ.induction.vanilla_induction
 
+    /-- WARNING: Not yet proven! -/
     theorem strong_induction
       : (P : ℕ → Prop)
       → P 0
       → (∀ (x : ℕ), (∀ (y : ℕ), y < x → P y) → P x)
       → ∀ (x : ℕ), P x
-      := ℕ.induction.strong_induction
+      := sorry -- ℕ.induction.strong_induction
 
+    /-- WARNING: Not yet proven! -/
     theorem well_ordering_principle
       : (S : ℕ → Prop)
       → (∃ (s : ℕ), S s)
       → ∃ (m : ℕ),
         S m
         ∧ ∀ (s : ℕ), S s → m ≤ s
-      := ℕ.induction.well_ordering_principle
+      := sorry -- ℕ.induction.well_ordering_principle
 
     theorem vanilla_induction_from
       : (start : ℕ)
