@@ -391,6 +391,8 @@ namespace ℕ
   def lt (x : ℕ) (y : ℕ) : Prop := ∃ (δ : ℕ), y = x + δ ∧ δ ≠ 0
   instance : LT ℕ where lt := ℕ.lt
   namespace lt
+    theorem ntn : ∀ {x y : ℕ}, x.lt y = (x < y) := rfl
+
     theorem succ_lt_strong_hom
       {x y : ℕ}
       : x < y ↔ x.succ < y.succ
@@ -494,10 +496,137 @@ namespace ℕ
           intro h_δ_eq_0
           rw [h_δ_eq_0, add.lem_add_0] at h_x_neq_y
           contradiction -- `x ≠ x`
-  end order
-    -- TODO: Show `<` iff `≤` and `≠`
 
+    theorem lt_succ_iff_le
+      {x y : ℕ}
+      : x < succ y
+      ↔ x ≤ y
+      := by
+        constructor
+        case mp =>
+          intro ⟨δ, ⟨h_δ, h_δ_ne_0⟩⟩
+          cases δ ; case zero => contradiction -- assumption `δ = 0` contradicts `h_δ_ne_0 : δ ≠ 0`
+          case succ δ =>
+          rw [add.lem_add_succ] at h_δ ; injection h_δ with h
+          exists δ
+        case mpr =>
+          intro ⟨δ, h_δ⟩
+          exists succ δ
+          constructor
+          case right => simp
+          rw [h_δ, add.lem_add_succ]
+  end order
+
+  namespace lt
     -- TODO: Show `WellFounded`ness of `<`
+    /-
+    inductive Acc.{u} : {α : Sort u} → (α → α → Prop) → α → Prop
+    number of parameters: 2
+    constructors:
+    `Acc.intro : ∀ {α : Sort u} {r : α → α → Prop} (x : α), (∀ (y : α), r y x → Acc r y) → Acc r x`
+    -/
+    theorem lem_zero_acc
+      : Acc ℕ.lt 0
+      := by
+        constructor
+        intro y ⟨δ, ⟨h_0_eq_y_δ, (h_δ_ne_0 : δ ≠ 0)⟩⟩ -- `δ ≠ 0` proven here
+        have h_δ_eq_0 : δ = 0 := And.right $ ℕ.add.thm_args_0_of_add_0 h_0_eq_y_δ.symm -- `δ = 0` proven here
+        contradiction
+    theorem lem_succ_acc
+      (x : ℕ)
+      (h_x_acc : Acc ℕ.lt x)
+      : Acc ℕ.lt (succ x)
+      := by
+        constructor
+        have h_all_under_x_acc : ∀ (z : ℕ), z < x → Acc ℕ.lt z := match h_x_acc with | Acc.intro x h => h
+        intro y (h_y_lt_succ_x : y < succ x)
+        have h := order.le_iff_lt_v_eq.mp ∘ order.lt_succ_iff_le.mp $ h_y_lt_succ_x
+        cases h
+        case inr h_y_eq_x => rw [h_y_eq_x] ; assumption
+        case inl h_y_lt_x => apply h_all_under_x_acc ; assumption
+
+    theorem thm_lt_well_founded
+      : WellFounded ℕ.lt
+      := by
+        constructor
+        intro x ; induction x
+        case h.zero => exact lem_zero_acc
+        case h.succ x ih => exact lem_succ_acc x ih
+  end lt
+
+
+
+  -- SECTION: Induction
+  namespace induction
+    /-- aka. Structural induction. A specified form of the recursor; i.e. the recursor is *stronger*. -/
+    theorem vanilla_induction
+      (P : ℕ → Prop)
+      (h_0 : P 0)
+      (ih : ∀ (x : ℕ), P x → P (succ x))
+      : ∀ (x : ℕ), P x
+      := @ℕ.rec P h_0 ih
+
+    theorem strong_induction
+      (P : ℕ → Prop)
+      (h_0 : P 0)
+      (ih : ∀ (x : ℕ), (∀ (y : ℕ), y < x → P y) → P x)
+      : ∀ (x : ℕ), P x
+      | 0 => h_0
+      | succ x => sorry -- FIXME:
+
+    theorem well_ordering_principle
+      (S : ℕ → Prop)
+      (h_S_nonempty : ∃ (s : ℕ), S s)
+      : ∃ (m : ℕ),
+        S m ∧ ∀ (s : ℕ), S s → m ≤ s
+      := sorry -- FIXME:
+
+    theorem vanilla_induction_from
+      (start : ℕ)
+      (P : ℕ → Prop)
+      (h_start : P start)
+      (ih : ∀ (x : ℕ), start ≤ x → P x → P (succ x))
+      : ∀ (x : ℕ), start ≤ x → P x
+      :=
+        let Q : ℕ → Prop := (P $ start + ·)
+        have : ∀ (x : ℕ), Q x :=
+          vanilla_induction Q h_start $
+          fun x (h : P (start + x)) =>
+          suffices P (start + x).succ by simp [Q] ; assumption
+          by
+            apply ih (start + x)
+            · apply le.le_add_right
+            · assumption
+        fun x ⟨δ, h_δ⟩ =>
+        by
+          rw [h_δ]
+          show Q δ
+          apply this
+
+    theorem strong_induction_from
+      (start : ℕ)
+      (P : ℕ → Prop)
+      (h_start : P start)
+      (ih : ∀ (x : ℕ), start ≤ x → (∀ (y : ℕ), start ≤ y → y < x → P y) → P x)
+      : ∀ (x : ℕ), start ≤ x → P x
+      := by
+        let Q : ℕ → Prop := fun x => P $ start + x
+        have : ∀ (x : ℕ), Q x :=
+          strong_induction Q h_start $
+          fun x' h' =>
+          ih (start + x') le.le_add_right $
+          fun y ⟨δ, h_δ⟩ h_y_lt_start_x' => by
+          rw [h_δ] ; rw [h_δ] at h_y_lt_start_x'
+          apply h' δ
+          let ⟨ε, ⟨h_ε, h_ε'⟩⟩ := h_y_lt_start_x'
+          rw [←add.thm_assoc] at h_ε
+          have h_ε := add.thm_left_cancel start _ _ h_ε
+          exists ε
+        intro x ⟨δ, h_δ⟩
+        rw [h_δ]
+        apply this
+  end induction
+
 end ℕ
 
 end Numbers

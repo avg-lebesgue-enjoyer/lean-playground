@@ -15,6 +15,8 @@ namespace Numbers.ℕ.results
   @[simp] theorem ntn.succ_zero_eq_1 : succ zero = 1 := ntn_succ_zero_eq_1
   @[simp] theorem ntn.add {x y : ℕ} : x.add y = x + y := add.ntn
   @[simp] theorem ntn.mul {x y : ℕ} : x.mul y = x * y := mul.ntn
+  @[simp] theorem ntn.le : ∀ {x y : ℕ}, x.le y = (x ≤ y) := le.ntn
+  @[simp] theorem ntn.lt : ∀ {x y : ℕ}, x.lt y = (x < y) := lt.ntn
 
 
 
@@ -118,13 +120,42 @@ namespace Numbers.ℕ.results
 
 
 
-  /- SECTION: Results yet to be proven
-    [3.] Order (<, >, ≤ and ≥):
-      (include well-foundedness of `<`)
-      (include well-ordering principle ("strong induction"))
+  -- SECTION: Order
+  namespace order
+    open le
+    theorem le_refl {x : ℕ} : x ≤ x := refl
+    theorem le_antisymm {x y : ℕ} : x ≤ y → y ≤ x → x = y := antisymm
+    theorem le_trans {x y z : ℕ} : x ≤ y → y ≤ z → x ≤ z := trans
 
-    [4.] Induction from bases other than 0
-      (include "strong" variants)
+    theorem le_add_right {x δ : ℕ} : x ≤ x + δ := le.le_add_right
+    theorem le_add_left {x δ : ℕ} : x ≤ δ + x := le.le_add_left
+    theorem le_add_hom {a b x y : ℕ} : a ≤ x → b ≤ y → a + b ≤ x + y := add_le_add
+    theorem le_mul_hom {a b x y : ℕ} : a ≤ x → b ≤ y → a * b ≤ x * y := mul_le_mul
+
+    theorem le_succ_strong_hom {x y : ℕ} : x ≤ y ↔ x.succ ≤ y.succ := succ_le_strong_hom
+    theorem le_zero_initial : ∀ {x : ℕ}, 0 ≤ x := zero_initial
+  end order
+  namespace order
+    open lt
+    theorem lt_succ_strong_hom {x y : ℕ} : x < y ↔ x.succ < y.succ := succ_lt_strong_hom
+    theorem trichotomy : ∀ (x y : ℕ), x < y ∨ x = y ∨ x > y := lt.trichotomy
+    theorem lt_well_founded : WellFounded ℕ.lt := thm_lt_well_founded
+  end order
+  namespace order
+    open Numbers.ℕ.order
+    theorem le_iff_lt_v_eq {x y : ℕ} : x ≤ y ↔ x < y ∨ x = y := Numbers.ℕ.order.le_iff_lt_v_eq
+    theorem lt_iff_le_and_neq {x y : ℕ} : x < y ↔ x ≤ y ∧ x ≠ y := Numbers.ℕ.order.lt_iff_le_and_neq
+    theorem lt_succ_iff_le {x y : ℕ} : x < succ y ↔ x ≤ y := Numbers.ℕ.order.lt_succ_iff_le
+  end order
+
+
+  /- SECTION: Results yet to be proven
+    [4.] Induction
+      Induction (structural)
+      Strong induction
+      Well-ordering principle
+      Induction (vanilla) from bases other than 0
+      Strong induction from bases other than 0
 
     [5.] Fundamental Theorem of Arithmetic
       (it)
