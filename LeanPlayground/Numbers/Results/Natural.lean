@@ -149,6 +149,49 @@ namespace Numbers.ℕ.results
   end order
 
 
+
+  -- SECTION: Induction
+  namespace induction
+    theorem vanilla_induction
+      : (P : ℕ → Prop)
+      → P 0
+      → (∀ (x : ℕ), P x → P (succ x))
+      → ∀ (x : ℕ), P x
+      := ℕ.induction.vanilla_induction
+
+    theorem strong_induction
+      : (P : ℕ → Prop)
+      → P 0
+      → (∀ (x : ℕ), (∀ (y : ℕ), y < x → P y) → P x)
+      → ∀ (x : ℕ), P x
+      := ℕ.induction.strong_induction
+
+    theorem well_ordering_principle
+      : (S : ℕ → Prop)
+      → (∃ (s : ℕ), S s)
+      → ∃ (m : ℕ),
+        S m
+        ∧ ∀ (s : ℕ), S s → m ≤ s
+      := ℕ.induction.well_ordering_principle
+
+    theorem vanilla_induction_from
+      : (start : ℕ)
+      → (P : ℕ → Prop)
+      → P start
+      → (∀ (x : ℕ), start ≤ x → P x → P (succ x))
+      → ∀ (x : ℕ), start ≤ x → P x
+      := ℕ.induction.vanilla_induction_from
+
+    theorem strong_induction_from
+      : (start : ℕ)
+      → (P : ℕ → Prop)
+      → P start
+      → (∀ (x : ℕ), start ≤ x → (∀ (y : ℕ), start ≤ y → y < x → P y) → P x)
+      → ∀ (x : ℕ), start ≤ x → P x
+      := ℕ.induction.strong_induction_from
+  end induction
+
+
   /- SECTION: Results yet to be proven
     [4.] Induction
       Induction (structural)
