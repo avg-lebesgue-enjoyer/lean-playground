@@ -571,8 +571,7 @@ namespace ℕ
       (h_0 : P 0)
       (ih : ∀ (x : ℕ), (∀ (y : ℕ), y < x → P y) → P x)
       : ∀ (x : ℕ), P x
-      | 0 => h_0
-      | succ x => sorry -- FIXME:
+      := sorry
 
     theorem well_ordering_principle
       (S : ℕ → Prop)
