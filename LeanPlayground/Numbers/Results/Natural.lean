@@ -196,11 +196,8 @@ namespace Numbers.ℕ.results
 
   /- SECTION: Results yet to be proven
     [4.] Induction
-      Induction (structural)
       Strong induction
       Well-ordering principle
-      Induction (vanilla) from bases other than 0
-      Strong induction from bases other than 0
 
     [5.] Fundamental Theorem of Arithmetic
       (it)
