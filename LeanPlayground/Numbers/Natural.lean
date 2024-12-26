@@ -378,14 +378,39 @@ namespace ℕ
           }
           have h_δ : y = x + δ := add.thm_right_cancel 1 _ _ h_δ
           show ∃ δ, y = x + δ ; exact ⟨δ, h_δ⟩
+
+    -- 0 initial
+    theorem zero_initial
+      {x : ℕ}
+      : 0 ≤ x
+      := by
+        exists x
+        exact (@add.lem_0_add x).symm
   end le
+
   def lt (x : ℕ) (y : ℕ) : Prop := ∃ (δ : ℕ), y = x + δ ∧ δ ≠ 0
   instance : LT ℕ where lt := ℕ.lt
   namespace lt
     theorem succ_lt_strong_hom
       {x y : ℕ}
       : x < y ↔ x.succ < y.succ
-      := sorry -- FIXME: Do this!
+      := by
+        constructor
+        case mp =>
+          intro ⟨δ, h_δ⟩
+          have : δ ≠ 0 := h_δ.right
+          have : y.succ = x.succ + δ := calc y.succ
+            _ = (x + δ).succ  := by rw [h_δ.left]
+            _ = x.succ + δ    := by rw [add.lem_succ_add]
+          exists δ
+        case mpr =>
+          intro ⟨δ, h_δ⟩
+          have : δ ≠ 0 := h_δ.right
+          have : y.succ = (x + δ).succ := calc y.succ
+            _ = x.succ + δ    := h_δ.left
+            _ = (x + δ).succ  := by rw [add.lem_succ_add]
+          have : y = x + δ := by injection this
+          exists δ
 
     theorem trichotomy
       (x y : ℕ)
@@ -402,9 +427,74 @@ namespace ℕ
           constructor
           · exact (add.lem_0_add x.succ).symm
           · intro h ; injection h
-        | succ x, succ y => sorry -- FIXME: This should come from applying strong hom to each of the three cases granted by the recursive call.
+        | succ x, succ y =>
+          match trichotomy x y with
+          | .inl h_x_lt_y => .inl $ succ_lt_strong_hom.mp h_x_lt_y
+          | .inr (.inl h_x_eq_y) => .inr ∘ .inl $ congrArg succ h_x_eq_y
+          | .inr (.inr h_x_gt_y) => .inr ∘ .inr $ succ_lt_strong_hom.mp h_x_gt_y
   end lt
-    -- TODO: Show `≤` iff `<` or `=`
+
+  namespace order
+    theorem le_iff_lt_v_eq
+      {x y : ℕ}
+      : x ≤ y
+      ↔ x < y ∨ x = y
+      := by
+        constructor
+        case mp =>
+          intro ⟨δ, h_δ⟩
+          cases δ with
+          | zero =>
+            conv at h_δ => {
+              rhs ; rhs ;
+              rw [ntn_zero_eq_0]
+            }
+            have h_δ : x = y := h_δ.symm
+            exact Or.inr h_δ
+          | succ δ =>
+            apply Or.inl
+            exists δ.succ
+            constructor
+            · assumption
+            · intro h ; injection h
+        case mpr =>
+          intro h
+          cases h with
+          | inl h =>
+            let ⟨δ, h_δ⟩ := h
+            let h_δ := h_δ.left
+            exists δ
+          | inr h =>
+            rw [h]
+            exact le.refl
+    theorem lt_iff_le_and_neq
+      {x y : ℕ}
+      : x < y
+      ↔ x ≤ y
+      ∧ x ≠ y
+      := by
+        constructor
+        case mp =>
+          intro ⟨δ, h_δ⟩
+          constructor
+          case left =>
+            simp [h_δ]
+            apply @le.add_le_add x 0 x δ le.refl le.zero_initial
+          case right =>
+            simp [h_δ]
+            intro h
+            have h := Eq.symm $ add.thm_left_cancel x 0 δ h
+            have h_δ := h_δ.right
+            contradiction
+        case mpr =>
+          intro ⟨⟨δ, h_δ⟩, h_x_neq_y⟩
+          rw [h_δ] at h_x_neq_y
+          exists δ
+          constructor ; case left => assumption ;
+          intro h_δ_eq_0
+          rw [h_δ_eq_0, add.lem_add_0] at h_x_neq_y
+          contradiction -- `x ≠ x`
+  end order
     -- TODO: Show `<` iff `≤` and `≠`
 
     -- TODO: Show `WellFounded`ness of `<`
