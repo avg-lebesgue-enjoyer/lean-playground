@@ -49,6 +49,15 @@ namespace ℕ
       := match y with
       | 0 => rfl
       | succ y => by rw [lem_add_succ x.succ y, lem_add_succ x y, lem_succ_add x y]
+    @[simp] theorem lem_succ_eq_add_1
+      (x : ℕ)
+      : succ x = x + 1
+      := by
+        apply Eq.symm
+        calc x + 1
+          _ = x + succ 0    := rfl
+          _ = succ (x + 0)  := rfl
+          _ = succ x        := rfl
 
     @[simp] theorem thm_assoc
       (x y z : ℕ)
@@ -149,13 +158,16 @@ namespace ℕ
       := match x with
       | 0 => rfl
       | succ x => by
-        simp [lem_mul_succ, thm_add_mul a b x]
-        calc a * x + b * x + a + b
-          _ = a * x + b * x + (a + b)   := by rw [←add.thm_assoc]
-          _ = a * x + (b * x + (a + b)) := by rw [←add.thm_assoc]
-          _ = a * x + ((b * x + a) + b) := by rw [add.thm_assoc (b * x)]
-          _ = a * x + ((a + b * x) + b) := by rw [add.thm_comm _ a]
-          _ = a * x + a + b * x + b     := by simp
+        calc (a + b) * x.succ
+          _ = (a + b) * x + (a + b) := rfl
+          _ = (a * x + b * x) + (a + b) := by rw [thm_add_mul a b x]
+          _ = ((a * x + b * x) + a) + b := by rw [add.thm_assoc]
+          _ = (a * x + (b * x + a)) + b := by rw [← add.thm_assoc (a * x)]
+          _ = (a * x + (a + b * x)) + b := by rw [add.thm_comm _ a]
+          _ = ((a * x + a) + b * x) + b := by rw [add.thm_assoc (a * x)]
+          _ = (a * x.succ + b * x) + b  := rfl
+          _ = a * x.succ + (b * x + b)  := by rw [← add.thm_assoc]
+          _ = a * x.succ + b * x.succ   := rfl
 
     theorem thm_comm
       (x y : ℕ)
@@ -523,8 +535,8 @@ namespace ℕ
           intro ⟨δ, h_δ⟩
           exists succ δ
           constructor
-          case right => simp
-          rw [h_δ, add.lem_add_succ]
+          case right => intro h ; injection h
+          case left => rw [h_δ] ; rfl
   end order
 
   namespace lt
@@ -563,6 +575,35 @@ namespace ℕ
       := by
         intro x
         exists 1
+
+    theorem ge_1_of_ne_0
+      {x : ℕ}
+      : x ≠ 0
+      → 1 ≤ x
+      := by
+        intro h_x_ne_0
+        match x with
+        | 0 => contradiction
+        | succ x =>
+          have : x.succ = x + 1 := rfl
+          rw [this]
+          have : (1 : ℕ) = 0 + 1 := rfl
+          rw [this]
+          apply le.add_le_add
+          · exact zero_initial
+          · exists 0
+    theorem ne_0_of_1_le
+      {x : ℕ}
+      : 1 ≤ x
+      → x ≠ 0
+      := by
+        intro ⟨δ, h_δ⟩
+        match x with
+        | 0 =>
+          have : (1 : ℕ) = 0 := And.left $ add.thm_args_0_of_add_0 h_δ.symm
+          contradiction
+        | succ x =>
+          intro h ; injection h
   end le
 
 
@@ -709,6 +750,331 @@ namespace ℕ
         rw [h_δ]
         apply this
   end induction
+
+
+
+  -- SECTION: Fundamental Theorem of Arithmetic
+  namespace fund_arithmetic
+    /-- The divisibility relationship on ℕ. Uses unicode `∣` (type with `\|`) rather than ascii `|` (type with `|`). -/
+    def divides (d : ℕ) (x : ℕ) : Prop := ∃ (q : ℕ), x = d * q
+    @[inherit_doc] infix:50 " ∣ " => divides
+
+    theorem le_of_divides
+      {d x : ℕ}
+      : x ≠ 0
+      → d ∣ x
+      → d ≤ x
+      := by
+        intro h_x_ne_0 ⟨q, h_q⟩
+        have h_trich := lt.trichotomy d x
+        cases h_trich
+        case inl h_trich =>
+          have ⟨δ, ⟨_, _⟩⟩ := h_trich
+          exists δ
+        case inr h_trich =>
+          cases h_trich
+          case inl h_d_eq_x => rw [h_d_eq_x] ; exists 0
+          case inr h_x_lt_d =>
+            -- show a contradiction
+            have ⟨δ, ⟨h_δ, h_δ_ne_0⟩⟩ := h_x_lt_d
+            rw [h_δ, mul.thm_add_mul] at h_q
+            match q with
+            | 0 =>
+              -- show a contradiction
+              have h_q : x = 0 := h_q
+              contradiction -- with `h_x_ne_0 : x ≠ 0`
+            | succ q =>
+              -- show a contradiction
+              have h_q : 0 + x = x * q + δ * q + δ + x :=
+                calc 0 + x
+                  _ = x := by rw [add.lem_0_add]
+                  _ = x * q.succ + δ * q.succ := h_q
+                  _ = (x * q + x) + (δ * q + δ) := rfl
+                  _ = ((x * q + x) + δ * q) + δ := by rw [add.thm_assoc]
+                  _ = (x * q + (x + δ * q)) + δ := by rw [← add.thm_assoc (x * q)]
+                  _ = (x * q + (δ * q + x)) + δ := by rw [add.thm_comm x]
+                  _ = ((x * q + δ * q) + x) + δ := by rw [add.thm_assoc (x * q)]
+                  _ = (x * q + δ * q) + (x + δ) := by rw [← add.thm_assoc]
+                  _ = (x * q + δ * q) + (δ + x) := by rw [add.thm_comm x]
+                  _ = ((x * q + δ * q) + δ) + x := by rw [← add.thm_assoc (x * q + δ * q)]
+              have h_q : 0 = x * q + δ * q + δ := add.thm_right_cancel x _ _ h_q
+              have : δ = 0 := And.right $ add.thm_args_0_of_add_0 h_q.symm
+              contradiction -- with `h_δ_ne_0 : δ ≠ 0`
+
+    def prime (p : ℕ) : Prop := p ≠ 1 ∧ ∀ (d : ℕ), d ∣ p → d = 1 ∨ d = p
+    def composite (x : ℕ) : Prop := x = 1 ∨ ∃ (d : ℕ), d ≠ 1 ∧ d ≠ x ∧ d ∣ x
+
+    /-- Proof that any nonzero number is either prime or composite. -/
+    theorem lem_composite_of_n_prime
+      : ∀ (x : ℕ),
+        x ≠ 0
+        → ¬ (prime x)
+        → composite x
+      := by
+        intro x h_x_ne_0 h_n_prime_x
+        have h_n_prime_x : x = 1 ∨ ∃ (d : ℕ), d ∣ x ∧ d ≠ 1 ∧ d ≠ x := by -- painful logic rewriting
+          rw [(calc ¬ prime x
+            _ = ¬ (x ≠ 1 ∧ ∀ (d : ℕ), d ∣ x → d = 1 ∨ d = x)          := rfl
+            _ = (¬ (x ≠ 1) ∨ ¬ ∀ (d : ℕ), d ∣ x → d = 1 ∨ d = x)      := by rw [Classical.not_and_iff_or_not_not]
+            _ = (x = 1 ∨ ¬ ∀ (d : ℕ), d ∣ x → d = 1 ∨ d = x)          := by
+                                                                        have : (¬ (x ≠ 1)) = (x = 1) := Classical.not_not |> propext
+                                                                        rw [this]
+            _ = (x = 1 ∨ ∃ (d : ℕ), ¬ (d ∣ x → d = 1 ∨ d = x))        := by rw [Classical.not_forall]
+            _ = (x = 1 ∨ ∃ (d : ℕ), d ∣ x ∧ ¬ (d = 1 ∨ d = x))        := by conv => {
+                                                                          lhs ; rhs ; arg 1 ; intro d
+                                                                          rw [not_imp]
+                                                                        }
+            _ = (x = 1 ∨ ∃ (d : ℕ), d ∣ x ∧ (¬ (d = 1) ∧ ¬ (d = x)))  := by conv => {
+                                                                          lhs ; rhs ; arg 1 ; intro d ; rhs
+                                                                          rw [not_or]
+                                                                        }
+            _ = (x = 1 ∨ ∃ (d : ℕ), d ∣ x ∧ d ≠ 1 ∧ d ≠ x)            := rfl
+          )] at h_n_prime_x ; assumption
+        cases h_n_prime_x
+        case inl h => rw [h] ; apply Or.inl ; rfl
+        case inr h =>
+          have ⟨d, h_d⟩ := h
+          apply Or.inr
+          exists d
+          constructor
+          · exact h_d.right.left
+          · constructor
+            · exact h_d.right.right
+            · exact h_d.left
+
+    theorem lem_foldr_mul_bad_base
+      {xs : List ℕ}
+      {b : ℕ}
+      : xs.foldr ℕ.mul b
+      = xs.foldr ℕ.mul 1 * b
+      := match xs with
+      | [] => calc [].foldr ℕ.mul b
+        _ = b                     := rfl
+        _ = 1 * b                 := by rw [mul.lem_1_mul]
+        _ = [].foldr ℕ.mul 1 * b  := rfl
+      | (x :: xs) =>
+        calc (x :: xs).foldr ℕ.mul b
+          _ = x * xs.foldr ℕ.mul b        := by apply List.foldr_cons
+          _ = x * (xs.foldr ℕ.mul 1 * b)  := by rw [@lem_foldr_mul_bad_base xs]
+          _ = (x * xs.foldr ℕ.mul 1) * b  := by rw [mul.thm_assoc]
+          _ = (x :: xs).foldr ℕ.mul 1 * b := by rw [←mul.ntn (x := x), (List.foldr_cons xs (f := ℕ.mul) (b := 1) (a := x)).symm] -- evil
+
+    /-- Existence part of the fundamental theorem of arithmetic. No constraint that the list of primes be ascending. -/
+    theorem lem_fund_arith_exists
+      (x : ℕ)
+      (h_x_ne_0 : x ≠ 0)
+      : ∃ (ps : List ℕ),
+        (∀ (p : ℕ), p ∈ ps → prime p)
+        ∧ x = ps.foldr ℕ.mul 1
+      := by
+        apply induction.strong_induction_from 1 (fun x => ∃ (ps : List ℕ), (∀ (p : ℕ), p ∈ ps → prime p) ∧ x = ps.foldr ℕ.mul 1)
+        case a =>
+          show 1 ≤ x
+          exact le.ge_1_of_ne_0 h_x_ne_0
+        case h_start =>
+          exists []
+          apply And.intro
+          case left =>
+            show ∀ (p : ℕ), p ∈ [] → prime p
+            intro _ h ; cases h -- trivial
+          case right =>
+            show 1 = [].foldr ℕ.mul 1
+            rfl
+        case ih =>
+          intro x h_1_le_x ih
+          by_cases h : prime x
+          case pos => -- Assuming `h : prime x`
+            exists [x]
+            apply And.intro
+            case left =>
+              show ∀ (p : ℕ), p ∈ [x] → prime p
+              intro p h ; cases h
+              case head => assumption
+              case tail h => cases h -- ends in contradiction
+            case right =>
+              apply Eq.symm
+              show [x].foldr ℕ.mul 1 = x
+              calc [x].foldr ℕ.mul 1
+                _ = x * 1 := rfl
+                _ = x := mul.lem_mul_1 x
+          case neg => -- Assuming `h : ¬ prime x`
+            show ∃ ps, (∀ (p : ℕ), p ∈ ps → prime p) ∧ x = ps.foldr ℕ.mul 1
+            have h : composite x := lem_composite_of_n_prime x (le.ne_0_of_1_le h_1_le_x) h
+            -- x = 1 ∨ ∃ (d : ℕ), d ≠ 1 ∧ d ≠ x ∧ d ∣ x
+            cases h
+            case inl h =>
+              exists []
+              constructor
+              · intro p h ; cases h
+              · calc x
+                  _ = x * 1                 := by rw [mul.lem_mul_1]
+                  _ = x * [].foldr ℕ.mul 1  := rfl
+                rw [h, mul.lem_1_mul]
+            case inr h =>
+              have ⟨d, ⟨h_d_ne_1, h_d_ne_x, ⟨q, h_q⟩⟩⟩ := h
+              show ∃ ps, (∀ (p : ℕ), p ∈ ps → prime p) ∧ x = List.foldr mul 1 ps
+              -- We recurse onto the factors `d` and `q` of `x` (thanks to `ih`), and
+              --  build a witness for `ps` by taking recursive witnesses `ds` from `d`
+              --  and `qs` from `q`, and concatenating them.
+              have h_1_le_d : 1 ≤ d := by
+                match d with
+                | 0 =>
+                  show 1 ≤ 0
+                  rw [mul.lem_0_mul] at h_q
+                  rw [h_q] at h_1_le_x
+                  exact h_1_le_x
+                | succ d =>
+                  show 1 ≤ d.succ
+                  exists d
+                  rw [add.thm_comm 1, add.lem_succ_eq_add_1]
+              have h_1_le_q : 1 ≤ q := by -- virtually the same proof as `h_1_le_d`
+                match q with
+                | 0 =>
+                  show 1 ≤ 0
+                  rw [mul.lem_mul_0] at h_q
+                  rw [h_q] at h_1_le_x
+                  exact h_1_le_x
+                | succ q =>
+                  show 1 ≤ q.succ
+                  exists q
+                  rw [add.thm_comm 1, add.lem_succ_eq_add_1]
+              have h_x_ne_0 : x ≠ 0 := le.ne_0_of_1_le h_1_le_x
+              have h_d_lt_x : d < x := by
+                have : d ≤ x := le_of_divides h_x_ne_0 ⟨q, h_q⟩
+                have : d < x ∨ d = x := order.le_iff_lt_v_eq.mp this
+                cases this
+                case inl => assumption
+                case inr => contradiction -- `d = x` and `d ≠ x`
+              have h_q_lt_x : q < x := by -- virtually the same proof as `h_d_lt_x`
+                have : q ≤ x := le_of_divides h_x_ne_0 ⟨d, (by rw [mul.thm_comm] at h_q ; exact h_q)⟩
+                have : q < x ∨ q = x := order.le_iff_lt_v_eq.mp this
+                cases this
+                case inl => assumption
+                case inr h_q_eq_x =>
+                  -- Somewhat more involved contradiction. Could've symmetrised the arguments among `d` and `q` to make this proof entirely isomorphic to the one for `d`.s
+                  rw [h_q_eq_x] at h_q
+                  conv at h_q => {
+                    lhs
+                    rw [← mul.lem_1_mul x]
+                  }
+                  have h_d_eq_1 := mul.thm_right_cancel x d 1 (by assumption) h_q.symm
+                  contradiction -- with `d ≠ 1`
+              have ⟨ds, h_ds⟩ := ih d h_1_le_d h_d_lt_x
+              have ⟨qs, h_qs⟩ := ih q h_1_le_q h_q_lt_x
+              exists ds ++ qs
+              show (∀ (p : ℕ), p ∈ ds ++ qs → prime p) ∧ x = List.foldr mul 1 (ds ++ qs)
+              apply And.intro
+              case left =>
+                show (∀ (p : ℕ), p ∈ ds ++ qs → prime p)
+                intro p h
+                have h := List.mem_append.mp h
+                have h_ds := h_ds.left p
+                have h_qs := h_qs.left p
+                cases h <;> (rename_i h ; first | apply h_ds ; assumption | apply h_qs ; assumption)
+              case right =>
+                apply Eq.symm
+                show (ds ++ qs).foldr ℕ.mul 1 = x
+                have h_ds := h_ds.right.symm
+                have h_qs := h_qs.right.symm
+                rw [List.foldr_append ℕ.mul 1 ds qs, h_qs]
+                rw [lem_foldr_mul_bad_base, h_ds, h_q]
+
+    def list_increasing : List ℕ → Prop
+      | []              => True
+      | (_ :: [])       => True
+      | (a :: b :: xs)  => a ≤ b ∧ list_increasing (b :: xs)
+
+    theorem prime_divides_product
+      {p a b : ℕ}
+      : prime p
+      → p ∣ a * b
+      → p ∣ a ∨ p ∣ b
+      := sorry -- FIXME:
+
+    theorem prime_divides_product_list
+      {p : ℕ} {qs : List ℕ}
+      : prime p
+      → (∀ (q : ℕ), q ∈ qs → prime q)
+      → p ∣ qs.foldr ℕ.mul 1
+      → p ∈ qs
+      := by
+        induction qs
+        case nil =>
+          intro h_prime_p h_prime_qs ⟨d, h_d⟩
+          -- show a contradiction
+          have h_d : p * d = 1 := h_d.symm
+          have : p = 1 := And.left $ mul.thm_args_1_of_mul_1 _ _ h_d
+          have : p ≠ 1 := h_prime_p.left
+          contradiction
+        case cons q qs ih =>
+          intro h_prime_p h_prime_qs ⟨d, h_d⟩
+          show p ∈ q :: qs
+          have : (q :: qs).foldr mul 1 = q * qs.foldr mul 1 := by apply List.foldr_cons
+          rw [this] at h_d
+          have : p ∣ q * qs.foldr mul 1 := by exists d
+          have : p ∣ q ∨ p ∣ qs.foldr mul 1 := prime_divides_product (by assumption) this
+          cases this
+          case inr =>
+            rw [List.mem_cons]
+            apply Or.inr
+            apply ih
+            · assumption
+            · intro q h_q_in_qs
+              apply h_prime_qs q
+              rw [List.mem_cons] ; apply Or.inr ; assumption
+            · assumption
+          case inl h_p_divides_q =>
+            have : prime q := by
+              apply h_prime_qs q
+              rw [List.mem_cons]
+              exact Or.inl rfl
+            unfold prime at this
+            have : p = 1 ∨ p = q := this.right p h_p_divides_q
+            cases this
+            case inl h_p_eq_1 =>
+              have : p ≠ 1 := h_prime_p.left
+              contradiction
+            case inr h_p_eq_q =>
+              rw [h_p_eq_q]
+              apply List.mem_cons.mpr ; apply Or.inl ; rfl
+
+    /--
+      Uniqueness part of the fundamental theorem of arithmetic.
+      Actual uniqueness of the list of primes (not uniqueness up to permutation) is
+        enforced by requiring it to be sorted.
+    -/
+    theorem lem_fund_arith_unique
+      (x : ℕ)
+      (h_x_ne_0 : x ≠ 0)
+      : ∀ (ps qs : List ℕ),
+        (∀ (p : ℕ), p ∈ ps → prime p) ∧ (∀ (q : ℕ), q ∈ qs → prime q)
+        ∧ x = ps.foldr ℕ.mul 1        ∧ x = qs.foldr ℕ.mul 1
+        ∧ list_increasing ps          ∧ list_increasing qs
+        → qs = ps
+      := sorry -- FIXME:
+
+    /--
+      The fundamental theorem of arithmetic; any nonzero natural number has a unique-up-to-permutation
+        factorisation into primes.
+      Uniqueness-up-to-permutation is encoded as requring that a *sorted* list of prime factors be
+        unique.
+    -/
+    theorem fund_arith
+      (x : ℕ)
+      (h_x_ne_0 : x ≠ 0)
+      : (∃ (ps : List ℕ),
+        (∀ (p : ℕ), p ∈ ps → prime p)
+        ∧ x = ps.foldr ℕ.mul 1
+      ) ∧ ∀ (ps qs : List ℕ),
+        (∀ (p : ℕ), p ∈ ps → prime p) ∧ (∀ (q : ℕ), q ∈ qs → prime q)
+        ∧ x = ps.foldr ℕ.mul 1        ∧ x = qs.foldr ℕ.mul 1
+        ∧ list_increasing ps          ∧ list_increasing qs
+        → qs = ps
+      := by
+        constructor
+        · exact lem_fund_arith_exists x h_x_ne_0
+        · exact lem_fund_arith_unique x h_x_ne_0
+  end fund_arithmetic
 
 end ℕ
 
