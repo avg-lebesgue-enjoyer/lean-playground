@@ -984,6 +984,8 @@ namespace ℕ
       | (_ :: [])       => True
       | (a :: b :: xs)  => a ≤ b ∧ list_increasing (b :: xs)
 
+    -- NOTE: We **NEED** Euclidean division. Like, **NOW**.
+
     theorem prime_divides_product
       {p a b : ℕ}
       : prime p
