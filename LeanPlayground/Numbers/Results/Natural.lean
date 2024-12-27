@@ -195,9 +195,6 @@ namespace Numbers.ℕ.results
 
 
   /- SECTION: Results yet to be proven
-    [4.] Induction
-      Well-ordering principle
-
     [5.] Fundamental Theorem of Arithmetic
       (it)
   -/
