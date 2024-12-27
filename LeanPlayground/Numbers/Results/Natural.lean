@@ -133,10 +133,12 @@ namespace Numbers.ℕ.results
     theorem le_mul_hom {a b x y : ℕ} : a ≤ x → b ≤ y → a * b ≤ x * y := mul_le_mul
 
     theorem le_succ_strong_hom {x y : ℕ} : x ≤ y ↔ x.succ ≤ y.succ := succ_le_strong_hom
-    theorem le_zero_initial : ∀ {x : ℕ}, 0 ≤ x := zero_initial
+    theorem le_zero_initial {x : ℕ} : 0 ≤ x := zero_initial
+    theorem le_succ {x : ℕ} : x ≤ x.succ := le.le_succ
   end order
   namespace order
     open lt
+    theorem lt_irrefl {x : ℕ} : ¬(x < x) := lt.irrefl
     theorem lt_succ_strong_hom {x y : ℕ} : x < y ↔ x.succ < y.succ := succ_lt_strong_hom
     theorem trichotomy : ∀ (x y : ℕ), x < y ∨ x = y ∨ x > y := lt.trichotomy
     theorem lt_well_founded : WellFounded ℕ.lt := thm_lt_well_founded
@@ -159,7 +161,6 @@ namespace Numbers.ℕ.results
       → ∀ (x : ℕ), P x
       := ℕ.induction.vanilla_induction
 
-    /-- WARNING: Not yet proven! -/
     theorem strong_induction
       : (P : ℕ → Prop)
       → P 0
@@ -167,14 +168,13 @@ namespace Numbers.ℕ.results
       → ∀ (x : ℕ), P x
       := Numbers.ℕ.induction.strong_induction
 
-    /-- WARNING: Not yet proven! -/
     theorem well_ordering_principle
       : (S : ℕ → Prop)
       → (∃ (s : ℕ), S s)
       → ∃ (m : ℕ),
         S m
         ∧ ∀ (s : ℕ), S s → m ≤ s
-      := sorry -- ℕ.induction.well_ordering_principle
+      := ℕ.induction.well_ordering_principle
 
     theorem vanilla_induction_from
       : (start : ℕ)

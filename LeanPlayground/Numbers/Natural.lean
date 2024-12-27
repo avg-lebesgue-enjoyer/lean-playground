@@ -393,6 +393,16 @@ namespace ℕ
   namespace lt
     theorem ntn : ∀ {x y : ℕ}, x.lt y = (x < y) := rfl
 
+    theorem irrefl : ∀ {x : ℕ}, ¬ (x < x) := by
+      intro x ⟨δ, ⟨h_δ, h_δ_ne_0⟩⟩
+      conv at h_δ => {
+        lhs
+        apply (add.lem_add_0 x).symm
+      } -- `h_δ : x + 0 = x + δ`
+      have h_δ : δ = 0 := Eq.symm $ add.thm_left_cancel x 0 δ h_δ
+      contradiction
+
+
     theorem succ_lt_strong_hom
       {x y : ℕ}
       : x < y ↔ x.succ < y.succ
@@ -518,13 +528,6 @@ namespace ℕ
   end order
 
   namespace lt
-    -- TODO: Show `WellFounded`ness of `<`
-    /-
-    inductive Acc.{u} : {α : Sort u} → (α → α → Prop) → α → Prop
-    number of parameters: 2
-    constructors:
-    `Acc.intro : ∀ {α : Sort u} {r : α → α → Prop} (x : α), (∀ (y : α), r y x → Acc r y) → Acc r x`
-    -/
     theorem lem_zero_acc
       : Acc ℕ.lt 0
       := by
@@ -609,12 +612,57 @@ namespace ℕ
         fun x =>
         lemma (succ x) x le.le_succ
 
+    /-- Every inhabited subset of `ℕ` has a least element. This proof uses Classical logic. -/
     theorem well_ordering_principle
       (S : ℕ → Prop)
       (h_S_nonempty : ∃ (s : ℕ), S s)
       : ∃ (m : ℕ),
         S m ∧ ∀ (s : ℕ), S s → m ≤ s
-      := sorry -- FIXME:
+      := by
+        have lemma : ∀ (e : ℕ), S e → ∃ (m : ℕ), S m ∧ (∀ (s : ℕ), S s → m ≤ s) := by
+          apply strong_induction
+          case h_0 => -- Base case
+            intro h
+            exists 0
+            constructor
+            · assumption
+            · intro s h
+              exact le.zero_initial
+          case sih =>
+            intro x sih h_x
+            cases Classical.em $ ∃ (y : ℕ), y < x ∧ S y
+            case inl h => -- Case where there is a smaller element of `S` than `x`
+              have ⟨y, h⟩ := h
+              apply sih y h.left h.right
+            case inr h => -- Case where there is no smaller element of `S` than `x`
+            exists x
+            constructor
+            · assumption
+            · intro s h_s
+              apply Classical.byContradiction
+              intro h_n_x_le_s
+              apply h
+              exists s
+              constructor ; case right => assumption
+              case left =>
+                show s < x
+                have h_trichotomous := lt.trichotomy s x ; cases h_trichotomous
+                · assumption
+                case inr h_trichotomous =>
+                  cases h_trichotomous
+                  case inl h_s_eq_x =>
+                    -- Find a contradiction
+                    rw [h_s_eq_x] at h_n_x_le_s
+                    have : False := h_n_x_le_s le.refl
+                    contradiction
+                  case inr h_s_gt_x =>
+                    -- Find a contradiction
+                    have ⟨δ, h_δ⟩ := h_s_gt_x
+                    have h_x_le_s : x ≤ s := by exists δ ; exact h_δ.left
+                    contradiction
+        -- Straightforward application of the lemma
+        have ⟨e, h_e⟩ := h_S_nonempty
+        exact lemma e h_e
 
     theorem vanilla_induction_from
       (start : ℕ)
