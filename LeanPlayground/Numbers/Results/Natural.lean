@@ -165,7 +165,7 @@ namespace Numbers.ℕ.results
       → P 0
       → (∀ (x : ℕ), (∀ (y : ℕ), y < x → P y) → P x)
       → ∀ (x : ℕ), P x
-      := sorry -- ℕ.induction.strong_induction
+      := Numbers.ℕ.induction.strong_induction
 
     /-- WARNING: Not yet proven! -/
     theorem well_ordering_principle
@@ -196,7 +196,6 @@ namespace Numbers.ℕ.results
 
   /- SECTION: Results yet to be proven
     [4.] Induction
-      Strong induction
       Well-ordering principle
 
     [5.] Fundamental Theorem of Arithmetic

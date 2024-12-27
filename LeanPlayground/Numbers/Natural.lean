@@ -554,6 +554,14 @@ namespace ℕ
         case h.succ x ih => exact lem_succ_acc x ih
   end lt
 
+  namespace le
+    theorem le_succ :
+      ∀ {x : ℕ}, x ≤ x.succ
+      := by
+        intro x
+        exists 1
+  end le
+
 
 
   -- SECTION: Induction
@@ -569,9 +577,37 @@ namespace ℕ
     theorem strong_induction
       (P : ℕ → Prop)
       (h_0 : P 0)
-      (ih : ∀ (x : ℕ), (∀ (y : ℕ), y < x → P y) → P x)
+      (sih : ∀ (x : ℕ), (∀ (y : ℕ), y < x → P y) → P x)
       : ∀ (x : ℕ), P x
-      := sorry -- FIXME:
+      :=
+        -- `lemma` is to be proven (vanilla) inductively (in `b`).
+        -- It mirrors the form of the strong hypothesis.
+        have lemma : ∀ (b : ℕ), (∀ (x : ℕ), x ≤ b → P x) := by
+          intro b ; induction b
+          case zero =>
+            intro x h
+            rw [ℕ.ntn_zero_eq_0] at h
+            have ⟨δ, h_δ⟩ := h
+            have h_x_eq_0 : x = 0 := (add.thm_args_0_of_add_0 h_δ.symm).left
+            rw [h_x_eq_0]
+            assumption
+          case succ b vih =>
+            intro x h
+            have h := order.le_iff_lt_v_eq.mp h
+            cases h
+            case inl h =>
+              have h := order.lt_succ_iff_le.mp h
+              -- `h : x ≤ b`; `vih : ∀ (x : ℕ), x ≤ b → P x` applies
+              exact vih x h
+            case inr h =>
+              rw [h]
+              apply sih
+              intro y h
+              have h := order.lt_succ_iff_le.mp h
+              exact vih y h
+        -- A straightforward application of the lemma finishes the proof
+        fun x =>
+        lemma (succ x) x le.le_succ
 
     theorem well_ordering_principle
       (S : ℕ → Prop)
