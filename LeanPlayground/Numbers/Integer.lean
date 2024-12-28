@@ -69,6 +69,143 @@ end same_difference
 
 /-- The integers, defined as `(ℕ × ℕ) ⧸ same_difference`. -/
 def ℤ : Type := Quotient same_difference.setoid
+/-- Canonical quotient map onto `ℤ := (ℕ × ℕ) ⧸ same_difference`. -/
+def ℤ.mk : ℕ × ℕ → ℤ := Quotient.mk same_difference.setoid
+/-- The somewhat trivial part of the quotient axiomitisation for `ℤ`. -/
+theorem ℤ.exact {p q : ℕ × ℕ} : ℤ.mk p = ℤ.mk q → p ≈ q := by
+  intro h
+  unfold ℤ.mk at h
+  apply Quotient.exact
+  assumption
+/-- The nontrivial part of the quotient axiomitisation for `ℤ`. -/
+theorem ℤ.sound {p q : ℕ × ℕ} : p ≈ q → ℤ.mk p = ℤ.mk q := by
+  intro h_same_difference
+  unfold ℤ.mk
+  apply Quotient.sound
+  assumption
+/-- The induction principle for `ℤ`: every element may as well be of the form `ℤ.mk (something : ℕ × ℕ)`. -/
+theorem ℤ.ind {β : ℤ → Prop} (mk : ∀ (p : ℕ × ℕ), β (ℤ.mk p)) : (z : ℤ) → β z := by
+  apply Quotient.ind
+  intro a
+  apply mk
+/-- "Pattern-matching" the provided argument as `ℤ.mk (something : ℕ × ℕ)` *in a proof*. See also `ℤ.ind`. -/
+theorem ℤ.indOn {β : ℤ → Prop} (z : ℤ) (mk : ∀ (p : ℕ × ℕ), β (ℤ.mk p)) : β z := ℤ.ind mk z
+/--
+  Lift a non-dependent single-argument function `ℕ × ℕ → β` which respects the quotienting relation
+  `same_difference` to a map `ℤ → β`.
+-/
+def ℤ.lift {β : Sort u} (f : ℕ × ℕ → β) : (∀ (p q : ℕ × ℕ), p ≈ q → f p = f q) → ℤ → β :=
+  Quotient.lift (α := ℕ × ℕ) (β := β) (s := same_difference.setoid) f
 
+instance : OfNat ℤ 0 where ofNat := ℤ.mk (0, 0)
+instance : OfNat ℤ 1 where ofNat := ℤ.mk (1, 0)
+
+namespace ℤ
+  /- SECTION: Coersion `ℕ ↪ ℤ` -/
+  namespace coe_from_ℕ
+    instance it : Coe ℕ ℤ where coe x := ℤ.mk (x, 0)
+  end coe_from_ℕ
+
+
+
+  /- SECTION: Notation `0` and `1` -/
+  theorem ntn_zero : ℤ.mk (0, 0) = 0 := rfl
+  theorem ntn_one : ℤ.mk (1, 0) = 1 := rfl
+
+
+
+  /- SECTION: Addition: Definition, assoc, comm, kill `0` -/
+  def pair_add : ℕ × ℕ → ℕ × ℕ → ℕ × ℕ :=
+    fun ⟨a, b⟩ ⟨x, y⟩ => ⟨a + x, b + y⟩
+
+  open ℕ.results in
+  theorem pair_add.hom
+    {p p' q q' : ℕ × ℕ}
+    : p ≈ p'
+    → q ≈ q'
+    → pair_add p q ≈ pair_add p' q'
+    := by
+      let ⟨a, b⟩ := p ; let ⟨a', b'⟩ := p' ; let ⟨x, y⟩ := q ; let ⟨x', y'⟩ := q'
+      intro (h_p : a + b' = a' + b) (h_q : x + y' = x' + y)
+      show (a + x) + (b' + y') = (a' + x') + (b + y)
+      calc (a + x) + (b' + y')
+        _ = ((a + x) + b') + y' := by rw [arithmetic.add_assoc]
+        _ = (a + (x + b')) + y' := by rw [← @arithmetic.add_assoc a]
+        _ = (a + (b' + x)) + y' := by rw [arithmetic.add_comm x]
+        _ = ((a + b') + x) + y' := by rw [@arithmetic.add_assoc a]
+        _ = (a + b') + (x + y') := by rw [← arithmetic.add_assoc]
+        _ = (a' + b) + (x' + y) := by rw [h_p, h_q]
+        _ = ((a' + b) + x') + y := by rw [arithmetic.add_assoc]
+        _ = (a' + (b + x')) + y := by rw [← @arithmetic.add_assoc a']
+        _ = (a' + (x' + b)) + y := by rw [arithmetic.add_comm b]
+        _ = ((a' + x') + b) + y := by rw [@arithmetic.add_assoc a']
+        _ = (a' + x') + (b + y) := by rw [← arithmetic.add_assoc]
+
+  /-- Addition on ℤ. Defined by lifting to the quotient. -/
+  def add (x : ℤ) (y : ℤ) : ℤ :=
+    Quotient.liftOn₂ x y
+      (fun p q => ℤ.mk $ pair_add p q)
+      $ by -- Proof that `ℤ.mk ∘ pair_add` (put in necessary currying/uncurrying to make that typecheck) respects `pair_add`
+        intro p q p' q' h_p h_q
+        show ℤ.mk (pair_add p q) = ℤ.mk (pair_add p' q')
+        apply ℤ.sound
+        apply pair_add.hom <;> assumption
+  instance instAdd : Add ℤ where add := ℤ.add
+  namespace arith -- now we can finally prove stuff about addition on `ℤ` lol
+    /-- The defining property of `ℤ.add`: it acts as pairwise addition on arguments of the form `ℤ.mk (thing : ℕ × ℕ)`. -/
+    theorem add_mk {a b x y : ℕ} : (ℤ.mk (a, b)) + (ℤ.mk (x, y)) = ℤ.mk (a + x, b + y) := by
+      show ℤ.add (ℤ.mk (a, b)) (ℤ.mk (x, y)) = ℤ.mk (a + x, b + y)
+      unfold ℤ.mk
+      unfold ℤ.add
+      rfl -- thank heavens this worked... This is because `Quotient.liftOn₂` knows what it does to `Quotient.mk`s as arguments.
+
+    -- NOTE: Associativity
+    theorem add_assoc {x y z : ℤ} : x + (y + z) = (x + y) + z := by
+      -- Grab representatives
+      apply ℤ.indOn x ; intro (a, b)
+      apply ℤ.indOn y ; intro (p, q)
+      apply ℤ.indOn z ; intro (x, y)
+      -- Do the thing with the representatives (the thing, in this case, is to just use `ℕ.add`'s associativity)
+      rw [add_mk, add_mk, add_mk, add_mk]
+      conv => { lhs ; arg 1 ; congr <;> rw [ℕ.results.arithmetic.add_assoc] }
+
+    -- NOTE: Commutativity
+    theorem add_comm (x y : ℤ) : x + y = y + x := by
+      -- Grab representatives
+      apply ℤ.indOn x ; intro ⟨a, b⟩
+      apply ℤ.indOn y ; intro ⟨x, y⟩
+      -- Do the thing with the representatives
+      rw [add_mk, add_mk]
+      conv => { lhs ; arg 1 ; congr <;> rw [ℕ.results.arithmetic.add_comm] }
+
+    -- NOTE: The two kill-`0` axioms
+    theorem add_zero {x : ℤ} : x + 0 = x := by
+      apply ℤ.indOn x ; intro ⟨a, b⟩
+      rw [← ntn_zero]
+      rw [add_mk]
+      conv => { lhs ; arg 1 ; congr <;> rw [ℕ.results.arithmetic.add_zero] }
+    theorem zero_add {x : ℤ} : 0 + x = x := by
+      rw [add_comm]
+      exact add_zero
+  end arith
+
+
+
+  /- SECTION: Negation: Definition, double negation, inverse to `ℤ.add` -/
+  /-- Negation on `ℤ`. -/
+  def neg : ℤ → ℤ :=
+    ℤ.lift (fun (a, b) => ℤ.mk (b, a)) $ by -- Proof that this respects the relation
+      intro (a, b) (x, y) (h_pq : a + y = x + b)
+      show ℤ.mk (b, a) = ℤ.mk (y, x)
+      apply ℤ.sound
+      show b + x = y + a
+      conv => { congr <;> rw [ℕ.results.arithmetic.add_comm]}
+      exact h_pq.symm
+  instance : Neg ℤ where neg := ℤ.neg
+  namespace arith
+    -- FIXME: Double negation pls
+    -- FIXME: Inverse to `add` pls
+  end arith
+end ℤ
 
 end Numbers
