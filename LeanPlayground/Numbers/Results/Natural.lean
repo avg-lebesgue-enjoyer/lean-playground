@@ -43,6 +43,7 @@ namespace Numbers.ℕ.results
 
     @[simp] theorem add_assoc {x y z : ℕ} : x + (y + z) = (x + y) + z := thm_assoc x y z
     theorem add_comm (x y : ℕ) : x + y = y + x := thm_comm x y
+    theorem add_right_comm {x y : ℕ} (z : ℕ) : x + y + z = x + z + y := add.lem_right_comm z
 
     theorem args_0_of_add_0 {x y : ℕ} : x + y = 0 → x = 0 ∧ y = 0 := thm_args_0_of_add_0
     theorem arg_1_of_add_1 {x y : ℕ} : x + y = 1 → x = 1 ∨ y = 1 := add.arg_1_of_add_1 x y
@@ -53,6 +54,7 @@ namespace Numbers.ℕ.results
 
   namespace arithmetic.nosimp
     theorem add_comm (x y : ℕ) : x + y = y + x := arithmetic.add_comm x y
+    theorem add_right_comm {x y : ℕ} (z : ℕ) : x + y + z = x + z + y := arithmetic.add_right_comm z
 
     theorem args_0_of_add_0 {x y : ℕ} : x + y = 0 → x = 0 ∧ y = 0 := arithmetic.args_0_of_add_0
     theorem arg_1_of_add_1 {x y : ℕ} : x + y = 1 → x = 1 ∨ y = 1 := arithmetic.arg_1_of_add_1

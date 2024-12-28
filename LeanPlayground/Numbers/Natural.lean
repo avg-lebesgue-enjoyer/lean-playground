@@ -71,6 +71,13 @@ namespace ℕ
       := match y with
       | 0 => by rw [lem_add_0, lem_0_add]
       | succ y => by rw [lem_add_succ, lem_succ_add, thm_comm x y]
+    theorem lem_right_comm
+      {x y : ℕ} (z : ℕ)
+      : x + y + z = x + z + y
+      := calc x + y + z
+        _ = x + (y + z) := (add.thm_assoc ..).symm
+        _ = x + (z + y) := by rw [add.thm_comm y]
+        _ = x + z + y   := add.thm_assoc ..
 
     theorem thm_args_0_of_add_0
       {x y : ℕ}

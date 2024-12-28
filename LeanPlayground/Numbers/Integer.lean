@@ -141,11 +141,11 @@ namespace ℤ
         _ = ((a' + x') + b) + y := by rw [@arithmetic.add_assoc a']
         _ = (a' + x') + (b + y) := by rw [← arithmetic.add_assoc]
 
-  /-- Addition on ℤ. Defined by lifting to the quotient. -/
+  /-- Addition on `ℤ`. Defined by lifting to the quotient. -/
   def add (x : ℤ) (y : ℤ) : ℤ :=
     Quotient.liftOn₂ x y
       (fun p q => ℤ.mk $ pair_add p q)
-      $ by -- Proof that `ℤ.mk ∘ pair_add` (put in necessary currying/uncurrying to make that typecheck) respects `pair_add`
+      $ by -- Proof that `ℤ.mk ∘ pair_add` (put in necessary currying/uncurrying to make that typecheck) respects `same_difference`
         intro p q p' q' h_p h_q
         show ℤ.mk (pair_add p q) = ℤ.mk (pair_add p' q')
         apply ℤ.sound
@@ -203,9 +203,87 @@ namespace ℤ
       exact h_pq.symm
   instance : Neg ℤ where neg := ℤ.neg
   namespace arith
-    -- FIXME: Double negation pls
-    -- FIXME: Inverse to `add` pls
+    /-- The defining property of `ℤ.neg`: it swaps the components of a `thing : ℕ × ℕ` when applied to `ℤ.mk thing`. -/
+    theorem neg_mk {a b : ℕ} : - ℤ.mk (a, b) = ℤ.mk (b, a) := rfl
+
+    /-- Double negation for `ℤ`. -/
+    theorem neg_neg {x : ℤ} : - (-x) = x := by
+      apply ℤ.indOn x ; intro (a, b)
+      rw [neg_mk, neg_mk]
+
+    /-- `ℤ.neg` forms right-inverses for `ℤ.add`. -/
+    theorem add_neg {x : ℤ} : x + (-x) = 0 := by
+      apply ℤ.indOn x ; intro (a, b)
+      rw [neg_mk, add_mk, ←ntn_zero]
+      apply ℤ.sound
+      show (a + b) + 0 = 0 + (b + a)
+      open ℕ.results in
+      rw [arithmetic.add_zero, arithmetic.zero_add, arithmetic.add_comm]
+
+    /-- `ℤ.neg` forms left-inverses for `ℤ.add`. -/
+    theorem neg_add {x : ℤ} : (-x) + x = 0 := by
+      rw [add_comm]
+      exact add_neg
   end arith
+
+
+
+  /- SECTION: Multiplication: Definition, assoc, comm -/
+  def pair_mul : ℕ × ℕ → ℕ × ℕ → ℕ × ℕ
+    | (a, b), (x, y) =>
+      (a * x + b * y, a * y + b * x)
+
+  /-- Multiplication on `ℤ`. Defined by lifting to the quotient. -/
+  open ℕ.results in
+  def mul (x : ℤ) (y : ℤ) : ℤ :=
+    Quotient.liftOn₂ x y
+      (fun p q => ℤ.mk $ pair_mul p q)
+      $ by -- Proof that `ℤ.mk ∘ pair_mul` (put in necessary currying/uncurrying to make that typecheck) respects `same_difference`
+        intro ⟨a, b⟩ ⟨x, y⟩ ⟨a', b'⟩ ⟨x', y'⟩ (h_ab : a + b' = a' + b) (h_xy : x + y' = x' + y)
+        show ℤ.mk (pair_mul (a, b) (x, y)) = ℤ.mk (pair_mul (a', b') (x', y'))
+        apply ℤ.sound
+        show (a * x + b * y, a * y + b * x) ≈ (a' * x' + b' * y', a' * y' + b' * x')
+        show (a * x + b * y) + (a' * y' + b' * x') = (a' * x' + b' * y') + (a * y + b * x)
+        rw [← ℕ.results.arithmetic.add_assoc]
+        apply @ℕ.results.arithmetic.add_right_cancel (b' * x)
+        rw  [ ← ℕ.results.arithmetic.add_assoc
+            ,   ℕ.results.arithmetic.add_comm _ (b' * x)
+            ,   ℕ.results.arithmetic.add_assoc
+            , ← ℕ.results.arithmetic.add_mul
+            ,   h_ab]
+        apply @ℕ.results.arithmetic.add_right_cancel (a * x')
+        rw  [ ← ℕ.results.arithmetic.add_assoc
+            , ← @ℕ.results.arithmetic.add_assoc (b * y)
+            , ← @ℕ.results.arithmetic.add_assoc (a' * y')
+            , ← ℕ.results.arithmetic.add_mul
+            ,   ℕ.results.arithmetic.add_comm b'
+            ,   h_ab]
+        repeat (first | rw [ℕ.results.arithmetic.add_assoc] | rw [ℕ.results.arithmetic.add_mul])
+        conv => {
+          lhs;lhs;lhs
+          rw  [ ← arithmetic.add_assoc
+              , ← arithmetic.add_assoc
+              ,   arithmetic.add_comm (b * y)
+              ,   @arithmetic.add_assoc (b * x)
+              ,   arithmetic.add_comm (b * x)
+              ,   arithmetic.add_assoc
+              ,   arithmetic.add_assoc
+              , ← arithmetic.mul_add
+              ,   h_xy
+              ,   arithmetic.mul_add]
+        }
+        suffices a' * y + b * x + b * y + a' * x' + b * x' = b' * y' + a * y + b * x + b' * x + a * x' by
+          repeat rw [← arithmetic.add_assoc]
+          conv => {
+            congr <;> ( arg 2 ; repeat rw [arithmetic.add_assoc] )
+          }
+          rw [this]
+        apply @arithmetic.add_right_cancel (b * y')
+        repeat rw [← arithmetic.add_assoc]
+
+        admit
+  instance instMul : Mul ℤ where mul := ℤ.mul
+
 end ℤ
 
 end Numbers

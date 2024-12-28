@@ -61,8 +61,8 @@ namespace Numbers.ℤ.results
     theorem add_zero (x : ℤ) : x + 0 = x := arith.add_zero
     /-- Left-neutrality of `0` for `ℤ.add`. -/
     theorem zero_add (x : ℤ) : 0 + x = x := arith.zero_add
-    theorem add_neg {x : ℤ} : x + (-x) = 0 := sorry
-    theorem neg_add {x : ℤ} : (-x) + x = 0 := sorry
+    theorem add_neg {x : ℤ} : x + (-x) = 0 := arith.add_neg
+    theorem neg_add {x : ℤ} : (-x) + x = 0 := arith.neg_add
     -- Multiplicative commutative monoid
     theorem mul_assoc {x y z : ℤ} : x * (y * z) = (x * y) * z := sorry
     theorem mul_comm (x y : ℤ) : x * y = y * x := sorry
@@ -82,8 +82,10 @@ namespace Numbers.ℤ.results
 
     /-- The defining property of `ℤ.add`: it acts as pairwise addition on arguments of the form `ℤ.mk (thing : ℕ × ℕ)`. -/
     theorem add_mk {a b x y : ℕ} : (ℤ.mk (a, b)) + (ℤ.mk (x, y)) = ℤ.mk (a + x, b + y) := arith.add_mk
+    /-- The defining property of `ℤ.neg`: it swaps the components of a `thing : ℕ × ℕ` when applied to `ℤ.mk thing`. -/
+    theorem neg_mk {a b : ℕ} : - ℤ.mk (a, b) = ℤ.mk (b, a) := arith.neg_mk
 
-    theorem neg_neg {x : ℕ} : -(-x) = x := sorry
+    theorem neg_neg {x : ℤ} : -(-x) = x := arith.neg_neg
 
     theorem sub_eq_add_neg {x y : ℤ} : x - y = x + -y := sorry
     theorem sub_self {x : ℤ} : x - x = 0 := sorry
@@ -93,6 +95,9 @@ namespace Numbers.ℤ.results
 
     theorem mul_zero {x : ℤ} : x * 0 = 0 := sorry
     theorem zero_mul {x : ℤ} : 0 * x = 0 := sorry
+
+    theorem mul_neg_1 {x : ℤ} : x * (-1) = -x := sorry
+    theorem neg_1_mul {x : ℤ} : (-1) * x = -x := sorry
 
     -- More results will come to mind as they prove useful
   end ring
