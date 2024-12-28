@@ -769,6 +769,7 @@ namespace ℕ
 
 
   -- SECTION: Fundamental Theorem of Arithmetic
+  namespace tomb -- I want to develop the theory of "the integers modulo a prime" first, just so that proving `p ∣ a * b → p ∣ a ∨ p ∣ b` isn't a huge pain in the ass. That necessitates reasoning about the integers first. The fundamental theorem of arithmetic will get its own separate file eventually.
   namespace fund_arithmetic
     /-- The divisibility relationship on ℕ. Uses unicode `∣` (type with `\|`) rather than ascii `|` (type with `|`). -/
     def divides (d : ℕ) (x : ℕ) : Prop := ∃ (q : ℕ), x = d * q
@@ -1151,12 +1152,91 @@ namespace ℕ
                   rw [h_q_eq_q', h_r_eq_r']
                   constructor <;> rfl
 
+    theorem divides_sum_of_divides_args
+      {d a b : ℕ}
+      : d ∣ a
+      → d ∣ b
+      → d ∣ (a + b)
+      := by
+        intro ⟨q, h_q⟩ ⟨r, h_r⟩
+        exists q + r
+        calc a + b
+          _ = d * q + d * r := by rw [h_q, h_r]
+          _ = d * (q + r)   := by rw [← mul.thm_mul_add]
+
+    -- evil proof
+    theorem factor_of_factor_thing_eq_factor
+      {d a b c : ℕ}
+      : a + b = c
+      → d ∣ a
+      → d ∣ c
+      → d ∣ b
+      := by
+        intro h_a_b_eq_c ⟨q, h_q⟩ ⟨q', h_q'⟩
+        by_cases h : d = 0
+        case pos => -- Case where `h : d = 0`
+          rw [h, mul.lem_0_mul] at h_q
+          rw [h, mul.lem_0_mul] at h_q'
+          rw [h_q, h_q', add.lem_0_add] at h_a_b_eq_c
+          -- Now we know that `b = 0`, it's really easy to prove that `d ∣ b`
+          exists 0
+        case neg => -- Case where `h : d ≠ 0`
+          have ⟨β, r, h_βr, h_r_lt_d⟩ := (euclidean_division b d h).left
+          by_cases h : r = 0
+          case pos => -- Case where `h : r = 0`
+            -- show d ∣ b
+            rw [h, add.lem_add_0] at h_βr -- `h_βr : b = d * β`
+            exists β
+          case neg => -- Case where `h : r ≠ 0`
+            -- show a contradiction
+            -- We'll contradict the *uniqueness* part of euclidean division on `c`
+            have silver_bullet := (euclidean_division c d (by assumption)).right
+            rw [h_q, h_βr, add.thm_assoc, ← mul.thm_mul_add] at h_a_b_eq_c
+            -- `h_a_b_eq_c : d * (q + β) + r = c` exhibits a quotient-remainder division
+            -- `h_q' : c = d * q'` exhibits another quotient-remainder division with *different remainder* `0 ≠ r`
+            have := silver_bullet (q + β) q' r 0
+            have h_0_lt_d : 0 < d := by
+              match d with
+              | 0 => contradiction -- `d ≠ 0` is known already
+              | succ d =>
+                apply order.lt_succ_iff_le.mpr
+                exact le.zero_initial
+            have := this ⟨h_a_b_eq_c.symm, h_q', h_r_lt_d, h_0_lt_d⟩
+            have := this.right
+            contradiction -- `r = 0` and `r ≠ 0`
+
+    /-- Euclid's lemma. -/
     theorem prime_divides_product
       {p a b : ℕ}
       : prime p
       → p ∣ a * b
       → p ∣ a ∨ p ∣ b
-      := sorry -- FIXME:
+      := by
+        intro h_prime_p h_p_div_ab
+        have : p ≠ 0 := by
+          intro h_p_eq_0
+          -- show a contradiction
+          unfold prime at h_prime_p
+          have := h_prime_p.right (succ 1) (by exists 0)
+          cases this
+          case inl this => injection this ; contradiction
+          case inr this => rw [h_p_eq_0] at this ; injection this
+        have ⟨q, r, h_qr, h_r_lt_p⟩  := euclidean_division a p (by assumption) |> And.left
+        have ⟨d, h_d⟩ := h_p_div_ab
+        rw [h_qr] at h_d
+        match r with
+        | 0 =>
+          apply Or.inl
+          show p ∣ a
+          exists q
+        | succ r =>
+          apply Or.inr
+          show p ∣ b
+          rw [mul.thm_add_mul, ← mul.thm_assoc] at h_d
+          have ⟨d, h_d⟩ : p ∣ r.succ * b :=
+            factor_of_factor_thing_eq_factor (d := p) h_d (by exists q * b) (by exists d)
+          have : p ∣ r.succ * b := by exists d
+          admit -- FIXME: `admit` defeat
 
     theorem prime_divides_product_list
       {p : ℕ} {qs : List ℕ}
@@ -1242,6 +1322,7 @@ namespace ℕ
         · exact lem_fund_arith_exists x h_x_ne_0
         · exact lem_fund_arith_unique x h_x_ne_0
   end fund_arithmetic
+  end tomb
 
 end ℕ
 

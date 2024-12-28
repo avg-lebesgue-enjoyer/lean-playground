@@ -1,5 +1,5 @@
 /- @file LeanPlayground/Numbers/Results/Natural.lean
- - Results proven about the natural numbers ℕ
+ - Results proven about the natural numbers ℕ.
  -/
 
 /- IMPORTS: The natural numbers -/
@@ -193,9 +193,4 @@ namespace Numbers.ℕ.results
       := ℕ.induction.strong_induction_from
   end induction
 
-
-  /- SECTION: Results yet to be proven
-    [5.] Fundamental Theorem of Arithmetic
-      (it)
-  -/
 end Numbers.ℕ.results
