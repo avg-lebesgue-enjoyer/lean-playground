@@ -224,21 +224,49 @@ namespace ℤ
     theorem neg_add {x : ℤ} : (-x) + x = 0 := by
       rw [add_comm]
       exact add_neg
+
+    theorem neg_add' {x y : ℤ} : - (x + y) = -x + -y := by
+      apply x.indOn ; intro (a, b)
+      apply y.indOn ; intro (x, y)
+      rw [add_mk, neg_mk, neg_mk, neg_mk, add_mk] -- closed by `rfl`
+
+    theorem neg_zero : -(0 : ℤ) = 0 := by
+      rw [← ntn_zero, neg_mk]
   end arith
 
 
 
-  /- SECTION: Multiplication: Definition, assoc, comm -/
+  /- SECTION: Multiplication: Definition, assoc, comm, mul_one, one_mul, mul_zero, zero_mul -/
   def pair_mul : ℕ × ℕ → ℕ × ℕ → ℕ × ℕ
     | (a, b), (x, y) =>
       (a * x + b * y, a * y + b * x)
 
-  /-- Multiplication on `ℤ`. Defined by lifting to the quotient. -/
   open ℕ.results in
+  /-- Multiplication on `ℤ`. Defined by lifting to the quotient. -/
   def mul (x : ℤ) (y : ℤ) : ℤ :=
     Quotient.liftOn₂ x y
       (fun p q => ℤ.mk $ pair_mul p q)
       $ by -- Proof that `ℤ.mk ∘ pair_mul` (put in necessary currying/uncurrying to make that typecheck) respects `same_difference`
+        -- NOTE: This proof is miserable and I've done it terribly inefficiently.
+        -- I learned:
+        --    `ℕ.results.arithmetic.add_right_comm` is *super* useful, actually!
+        --    I should learn to write my own tactics. At least in Lean3, this involves monadic code; I bet I could figure that out
+        --    `ℕ.results.arithmetic.add_right_cancel` should be an `↔`, not a `→`; this would allow cancelling in a goal with just a simple `rw`
+        --    `ℕ.results.arithmetic` is a huge pain in the ass to type out over and over.
+        --      As nice as it is to keep things exported from `ℕ.results` and have them further subdivided from within
+        --        there, I think `results.ℕ` (with an `open results` at the top of a file like this) with no further subdivision would be
+        --        better.
+        --      I'm in a bit too deep to go back and change *all* of that now though, including for `/Results/Integer.lean`.
+        --      I'll design my namespace tree a bit better next time, and make more judicious use of `export`. A file like:
+        --        ` /- @file Working/Stuff.lean -/          `
+        --        ` namespace short.working                 `
+        --        `   def thingIDontWannaSeeLater : ⋯ := ⋯  `
+        --        `                                         `
+        --        `   def thingIWannaSeeLater : ⋯ := ⋯      `
+        --        `   export short (thingIWannaSeeLater)    ` -- notice the `export` here
+        --        `   ⋯                                     `
+        --        ` end short.working                       `
+        --        might be better for my use case. Would have to try it out to really see...
         intro ⟨a, b⟩ ⟨x, y⟩ ⟨a', b'⟩ ⟨x', y'⟩ (h_ab : a + b' = a' + b) (h_xy : x + y' = x' + y)
         show ℤ.mk (pair_mul (a, b) (x, y)) = ℤ.mk (pair_mul (a', b') (x', y'))
         apply ℤ.sound
@@ -279,11 +307,282 @@ namespace ℤ
           }
           rw [this]
         apply @arithmetic.add_right_cancel (b * y')
+        conv => {
+          lhs
+          repeat rw [arithmetic.add_right_comm (b * y')]
+          rw [arithmetic.add_comm _ (b * y')]
+        }
+        rw [arithmetic.add_right_comm (b * x)]
+        rw [arithmetic.add_comm _ (b * x)]
+        rw [← arithmetic.mul_add, h_xy, arithmetic.mul_add]
+        conv => {
+          rhs
+          repeat rw [arithmetic.add_right_comm (b' * x)]
+          rw [arithmetic.add_comm _ (b' * x)]
+        }
+        rw [← @arithmetic.mul_add b', h_xy, @arithmetic.mul_add b']
+        conv => {
+          rhs
+          repeat rw [arithmetic.add_right_comm (a * x')]
+          rw [arithmetic.add_comm _ (a * x')]
+        }
+        rw [← @arithmetic.add_mul _ _ x', h_ab, @arithmetic.add_mul _ _ x']
+        rw [arithmetic.add_comm (a' * x')]
         repeat rw [← arithmetic.add_assoc]
-
-        admit
+        rw [← @arithmetic.mul_add b, h_xy, @arithmetic.mul_add b]
+        repeat rw [arithmetic.add_assoc]
+        conv => {
+          rhs
+          repeat rw [arithmetic.add_right_comm (b * y)]
+        }
+        repeat rw [arithmetic.add_right_comm (b * x')]
+        conv => {
+          rhs
+          repeat rw [← arithmetic.add_assoc]
+          rw  [ ← @arithmetic.add_mul _ _ y
+              ,   arithmetic.add_comm b' a
+              ,   h_ab
+              ,   @arithmetic.add_mul _ _ y
+              ]
+          repeat rw [arithmetic.add_assoc]
+        }
+        repeat rw [arithmetic.add_right_comm (a' * y)]
+        conv => {
+          rhs
+          rw [← arithmetic.add_right_comm (a' * x')]
+        }
+        -- Finally closed by `rfl`
   instance instMul : Mul ℤ where mul := ℤ.mul
+  namespace arith
+    /-- The defining property of `ℤ.mul`: it does that stuff on arguments of the form `ℤ.mk (thing : ℕ × ℕ)`. -/
+    theorem mul_mk {a b x y : ℕ} : (ℤ.mk (a, b)) * (ℤ.mk (x, y)) = ℤ.mk (a * x + b * y, a * y + b * x) := rfl
 
+    -- NOTE: assoc
+    open ℕ.results in
+    /-- Associativity of `ℤ.mul`. -/
+    theorem mul_assoc {x y z : ℤ} : x * (y * z) = (x * y) * z := by
+      -- Boilerplate
+      apply ℤ.indOn x ; intro (a, b)
+      apply ℤ.indOn y ; intro (p, q)
+      apply ℤ.indOn z ; intro (x, y)
+      repeat rw [mul_mk]
+      apply ℤ.sound
+      -- Do stuff
+      show (a * (p * x + q * y) + b * (p * y + q * x)) + ((a * p + b * q) * y + (a * q + b * p) * x) = ((a * p + b * q) * x + (a * q + b * p) * y) + (a * (p * y + q * x) + b * (p * x + q * y))
+      -- NOTE: This is exactly what `simp` was designed for...
+      repeat rw [arithmetic.mul_add]
+      repeat rw [arithmetic.add_mul]
+      repeat rw [arithmetic.add_assoc]
+      repeat rw [arithmetic.mul_assoc]
+      -- NOTE: You're about to witness the perfect advertisement for "creating your own tactic".
+      -- Shove `a * p * x` to the right-most position on both sides of `=` in the goal
+      conv => {
+        pattern (occs := *) (a * p * x + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (a * p * x)]
+      -- Shove `a * q * y` away
+      conv => {
+        pattern (occs := *) (a * q * y + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (a * q * y)]
+      -- Shove `b * p * y` away
+      conv => {
+        pattern (occs := *) (b * p * y + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (b * p * y)]
+      -- Shove `b * q * x` away
+      conv => {
+        pattern (occs := *) (b * q * x + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (b * q * x)]
+      -- Shove `a * p * y` away
+      conv => {
+        pattern (occs := *) (a * p * y + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (a * p * y)]
+      -- Shove `b * q * y` away
+      conv => {
+        pattern (occs := *) (b * q * y + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (b * q * y)]
+      -- Finally closed by `rfl`
+
+    -- NOTE: comm
+    open ℕ.results in
+    /-- Commutativity of `ℤ.mul`. -/
+    theorem mul_comm (x y : ℤ) : x * y = y * x := by
+      apply ℤ.indOn x ; intro (a, b)
+      apply ℤ.indOn y ; intro (x, y)
+      repeat rw [mul_mk]
+      apply ℤ.sound
+      show (a * x + b * y) + (x * b + y * a) = (x * a + y * b) + (a * y + b * x)
+      -- fake `simp`
+      repeat rw [arithmetic.add_assoc]
+      -- Shove `a * x` away
+      rw [arithmetic.mul_comm x a]
+      conv => {
+        pattern (occs := *) (a * x + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (a * x)]
+      -- Shove `b * y` away
+      rw [arithmetic.mul_comm y b]
+      conv => {
+        pattern (occs := *) (b * y + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (b * y)]
+      -- Shove `b * x` away
+      rw [arithmetic.mul_comm x b]
+      conv => {
+        pattern (occs := *) (b * x + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (b * x)]
+      -- Close out with `y * a = a * y`
+      rw [arithmetic.mul_comm a y]
+
+    open ℕ.results in
+    theorem mul_one {x : ℤ} : x * 1 = x := by
+      apply ℤ.indOn x ; intro (x, y)
+      rw [← ntn_one]
+      rw [mul_mk]
+      apply ℤ.sound
+      show (x * 1 + y * 0) + y = x + (x * 0 + y * 1)
+      rw [arithmetic.mul_one, arithmetic.mul_zero, arithmetic.add_zero, arithmetic.mul_zero, arithmetic.zero_add, arithmetic.mul_one]
+    theorem one_mul {x : ℤ} : 1 * x = x := by
+      rw [mul_comm] ; exact mul_one
+
+    open ℕ.results in
+    theorem mul_zero {x : ℤ} : x * 0 = 0 := by
+      apply ℤ.indOn x ; intro (x, y)
+      rw [← ntn_zero, mul_mk]
+      apply ℤ.sound
+      show (x * 0 + y * 0) + 0 = 0 + (x * 0 + y * 0)
+      rw [arithmetic.mul_zero, arithmetic.zero_add, arithmetic.mul_zero]
+    theorem zero_mul {x : ℤ} : 0 * x = 0 := by
+      rw [mul_comm] ; exact mul_zero
+  end arith
+
+
+
+  /- SECTION: Multiplication by negatives -/
+  namespace arith
+    open ℕ.results in
+    theorem mul_neg_1 {x : ℤ} : x * (-1) = -x := by
+      apply x.indOn ; intro (x, y)
+      rw [← ntn_one, neg_mk, neg_mk, mul_mk]
+      apply ℤ.sound
+      show (x * 0 + y * 1) + x = y + (x * 1 + y * 0)
+      rw  [ arithmetic.mul_zero
+          , arithmetic.zero_add
+          , arithmetic.mul_one
+          , arithmetic.mul_one
+          , arithmetic.mul_zero
+          , arithmetic.add_zero]
+
+    theorem neg_1_mul {x : ℤ} : (-1) * x = -x := by
+      rw [mul_comm] ; exact mul_neg_1
+  end arith
+
+
+
+  /- SECTION: Subtraction -/
+  def sub (x y : ℤ) : ℤ := x + (-y)
+  instance : Sub ℤ where sub := ℤ.sub
+  namespace arith
+    -- TODO: Actually prove the results about subtraction here
+    theorem sub_eq_add_neg {x y : ℤ} : x - y = x + -y := rfl
+
+    theorem sub_self {x : ℤ} : x - x = 0 := by
+      rw [sub_eq_add_neg]
+      exact add_neg
+
+    theorem sub_neg {x y : ℤ} : x - -y = x + y := by
+      rw [sub_eq_add_neg, neg_neg]
+
+    theorem neg_sub {x y : ℤ} : - (x + y) = -x - y := by
+      apply Eq.symm
+      rw [sub_eq_add_neg, neg_add']
+
+    theorem zero_sub {x : ℤ} : 0 - x = -x := by
+      rw [sub_eq_add_neg, zero_add]
+    theorem sub_zero {x : ℤ} : x - 0 = x := by
+      rw [sub_eq_add_neg, neg_zero, add_zero]
+  end arith
+
+
+
+  /- SECTION: Distributivity -/
+  namespace arith
+    open ℕ.results in
+    theorem mul_add {a x y : ℤ} : a * (x + y) = a * x + a * y := by
+      apply a.indOn ; intro (a, b)
+      apply x.indOn ; intro (p, q)
+      apply y.indOn ; intro (x, y)
+      rw [add_mk, mul_mk, mul_mk, mul_mk, add_mk]
+      apply ℤ.sound
+      show (a * (p + x) + b * (q + y)) + (a * q + b * p + (a * y + b * x)) =
+            (a * p + b * q + (a * x + b * y) + (a * (q + y) + b * (p + x)))
+      repeat rw [arithmetic.mul_add]
+      repeat rw [arithmetic.add_assoc]
+      -- Shove `a * p` away
+      conv => {
+        pattern (occs := *) (a * p + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (a * p)]
+      -- Shove `a * x` away
+      conv => {
+        pattern (occs := *) (a * x + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (a * x)]
+      -- Shove `b * q` away
+      conv => {
+        pattern (occs := *) (b * q + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (b * q)]
+      -- Shove `b * y` away
+      conv => {
+        pattern (occs := *) (b * y + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (b * y)]
+      -- Shove `a * q` away
+      conv => {
+        pattern (occs := *) (a * q + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (a * q)]
+      -- Shove `b * p` away
+      conv => {
+        pattern (occs := *) (b * p + _)
+        <;> rw [arithmetic.add_comm]
+      }
+      repeat rw [← arithmetic.add_right_comm (b * p)]
+      -- Finally closed by `rfl`
+
+    theorem add_mul {a b x : ℤ} : (a + b) * x = a * x + b * x := by
+      rw [mul_comm _ x, mul_comm a _, mul_comm b _]
+      exact mul_add ..
+  end arith
+
+
+
+  /- SECTION: Right commutativity my beloved -/
+  namespace arith
+    theorem add_right_comm {x y : ℤ} (z : ℤ) : x + y + z = x + z + y := by
+      repeat rw [← add_assoc]
+      rw [add_comm y]
+  end arith
 end ℤ
 
 end Numbers

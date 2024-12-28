@@ -64,48 +64,56 @@ namespace Numbers.ℤ.results
     theorem add_neg {x : ℤ} : x + (-x) = 0 := arith.add_neg
     theorem neg_add {x : ℤ} : (-x) + x = 0 := arith.neg_add
     -- Multiplicative commutative monoid
-    theorem mul_assoc {x y z : ℤ} : x * (y * z) = (x * y) * z := sorry
-    theorem mul_comm (x y : ℤ) : x * y = y * x := sorry
-    theorem mul_one {x : ℤ} : x * 1 = x := sorry
-    theorem one_mul {x : ℤ} : 1 * x = x := sorry
+    theorem mul_assoc {x y z : ℤ} : x * (y * z) = (x * y) * z := arith.mul_assoc
+    theorem mul_comm (x y : ℤ) : x * y = y * x := arith.mul_comm x y
+    theorem mul_one {x : ℤ} : x * 1 = x := arith.mul_one
+    theorem one_mul {x : ℤ} : 1 * x = x := arith.one_mul
     -- Distributivity
-    theorem mul_add {a x y : ℤ} : a * (x + y) = a * x + a * y := sorry
-    theorem add_mul {a b x : ℤ} : (a + b) * x := a * x + b * x := sorry
+    theorem mul_add {a x y : ℤ} : a * (x + y) = a * x + a * y := arith.mul_add
+    theorem add_mul {a b x : ℤ} : (a + b) * x = a * x + b * x := arith.add_mul
   end ring.spec
 
   -- More results
   namespace ring
     open Numbers.ℤ
 
-    -- `export` the stuff from `ring.spec` into `ring`
+    -- `export` the stuff from `Numbers.ℤ.results.ring.spec` into `Numbers.ℤ.results.ring`
     export spec (add_assoc add_comm add_zero zero_add add_neg neg_add mul_assoc mul_comm mul_one one_mul mul_add add_mul)
 
     /-- The defining property of `ℤ.add`: it acts as pairwise addition on arguments of the form `ℤ.mk (thing : ℕ × ℕ)`. -/
     theorem add_mk {a b x y : ℕ} : (ℤ.mk (a, b)) + (ℤ.mk (x, y)) = ℤ.mk (a + x, b + y) := arith.add_mk
     /-- The defining property of `ℤ.neg`: it swaps the components of a `thing : ℕ × ℕ` when applied to `ℤ.mk thing`. -/
     theorem neg_mk {a b : ℕ} : - ℤ.mk (a, b) = ℤ.mk (b, a) := arith.neg_mk
+    /-- The defining property of `ℤ.mul`: it does that stuff on arguments of the form `ℤ.mk (thing : ℕ × ℕ)`. -/
+    theorem mul_mk {a b x y : ℕ} : (ℤ.mk (a, b)) * (ℤ.mk (x, y)) = ℤ.mk (a * x + b * y, a * y + b * x) := arith.mul_mk
+
+    /-- My beloved <3, specialised to `ℤ`. (Note to self: Holds in any ring. Should generalise the proof...) -/
+    theorem add_right_comm {x y : ℤ} (z : ℤ) : x + y + z = x + z + y := arith.add_right_comm z
 
     theorem neg_neg {x : ℤ} : -(-x) = x := arith.neg_neg
+    theorem neg_add' {x y : ℤ} : - (x + y) = -x + -y := arith.neg_add'
+    theorem neg_zero : -(0 : ℤ) = 0 := arith.neg_zero
 
-    theorem sub_eq_add_neg {x y : ℤ} : x - y = x + -y := sorry
-    theorem sub_self {x : ℤ} : x - x = 0 := sorry
-    theorem sub_neg {x y : ℤ} : x - -y = x + y := sorry
-    theorem neg_sub {x y : ℤ} : - (x + y) = -x - y := sorry
-    theorem neg_dist_add {x y : ℤ} : - (x + y) = -x + -y := sorry
+    /-- The defining equation for `ℤ.sub`. -/
+    theorem sub_eq_add_neg {x y : ℤ} : x - y = x + -y := arith.sub_eq_add_neg
+    theorem sub_self {x : ℤ} : x - x = 0 := arith.sub_self
+    theorem sub_neg {x y : ℤ} : x - -y = x + y := arith.sub_neg
+    /-- Sorry, I wanted to call this `neg_add`, but I've already given that name to a more important result... -/
+    theorem neg_sub {x y : ℤ} : - (x + y) = -x - y := arith.neg_sub
+    theorem zero_sub {x : ℤ} : 0 - x = -x := arith.zero_sub
+    theorem sub_zero {x : ℤ} : x - 0 = x := arith.sub_zero
 
-    theorem mul_zero {x : ℤ} : x * 0 = 0 := sorry
-    theorem zero_mul {x : ℤ} : 0 * x = 0 := sorry
+    theorem mul_zero {x : ℤ} : x * 0 = 0 := arith.mul_zero
+    theorem zero_mul {x : ℤ} : 0 * x = 0 := arith.zero_mul
 
-    theorem mul_neg_1 {x : ℤ} : x * (-1) = -x := sorry
-    theorem neg_1_mul {x : ℤ} : (-1) * x = -x := sorry
+    theorem mul_neg_1 {x : ℤ} : x * (-1) = -x := arith.mul_neg_1
+    theorem neg_1_mul {x : ℤ} : (-1) * x = -x := arith.neg_1_mul
 
     -- More results will come to mind as they prove useful
   end ring
 
 
   /- SECTION: Results yet to be proven
-    [1.] Ring ℤ
-      Include subtraction
     [2.] Order
       Positive numbers
       `<` and `≤`
