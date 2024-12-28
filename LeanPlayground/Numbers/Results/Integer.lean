@@ -120,8 +120,9 @@ namespace Numbers.ℤ.results
 
   /- SECTION: Results yet to be proven
     [2.] Order
-      Positive numbers
+      Non-negative numbers (`nonneg x := x = ∃ a, x = ℤ.mk (a, 0)`)
       `<` and `≤`
+      Include compatability with arithmetic operations (requires such lemmas at the `nonneg` level)
     [3.] Euclidean division and Bezout's lemma
       Primality (include respecting `ℕ.prime` along `ℕ ↪ ℤ`)
       Euclidean division (include respecting `ℕ.euclidean_division` along `ℕ ↪ ℤ`)
