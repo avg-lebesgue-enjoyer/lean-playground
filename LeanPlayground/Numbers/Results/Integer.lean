@@ -43,12 +43,12 @@ namespace Numbers.ℤ.results
 
 
 
-  -- SECTION: Coersion ℕ ↪ ℤ
+  -- SECTION: Coersion `ℕ ↪ ℤ`
   instance : Coe ℕ ℤ where coe := Numbers.ℤ.coe_from_ℕ.it.coe
 
 
 
-  -- SECTION: The ring ℤ of integers
+  -- SECTION: The ring `ℤ` of integers
   -- The commutative unital ring axioms
   namespace ring.spec
     open Numbers.ℤ
@@ -111,6 +111,11 @@ namespace Numbers.ℤ.results
 
     -- More results will come to mind as they prove useful
   end ring
+
+
+
+  -- SECTION: The orders `<` and `≤` on `ℤ`
+
 
 
   /- SECTION: Results yet to be proven
