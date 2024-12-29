@@ -286,10 +286,8 @@ namespace Numbers.ℤ.results
 
   /- SECTION: Results yet to be proven
     [3.] Euclidean division and Bezout's lemma
-      Primality (include respecting `ℕ.prime` along `ℕ ↪ ℤ`)
-      Euclidean division (include respecting `ℕ.euclidean_division` along `ℕ ↪ ℤ`)
-      `gcd`
-      Bezout's lemma
+      `def coprime : ℤ → ℤ → Prop`
+      Bezout's lemma (in the special case of **coprime** coefficients, because I don't want to *think* about writing a `gcd` function right now)
       (After this is done, move to a new file `Modular.lean` and start reasoning about `ℤ ⧸ n`; goal is still fund. arith.)
   -/
 
