@@ -250,6 +250,7 @@ namespace Numbers.ℤ.results
   namespace number_theory
     theorem divides_refl (x : ℤ) : x ∣ x := divisibility.divides_refl x
     theorem divides_antisymm {x y : ℤ} : x ∣ y → y ∣ x → x = y ∨ x = -y := divisibility.divides_antisymm
+    theorem divides_trans {x y z : ℤ} : x ∣ y → y ∣ z → x ∣ z := divisibility.divides_trans
   end number_theory -- thank heavens
 
 

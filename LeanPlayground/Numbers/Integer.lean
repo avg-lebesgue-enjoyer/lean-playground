@@ -1387,6 +1387,10 @@ namespace ℤ
           apply Or.inr
           rw [mul_neg_1, Eq.comm, neg_eq_comm, Eq.comm] at h_d
           assumption
+    theorem divides_trans {x y z : ℤ} : x ∣ y → y ∣ z → x ∣ z := by
+      intro ⟨d, h_d⟩ ⟨e, h_e⟩
+      rw [h_d, ←mul_assoc] at h_e
+      exists d * e
   end divisibility
 
   -- def prime (p : ℤ) : Prop := p > 1 ∧ ∀ (d : ℤ)
