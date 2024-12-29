@@ -524,6 +524,128 @@ namespace ℤ
 
     theorem neg_1_mul {x : ℤ} : (-1) * x = -x := by
       rw [mul_comm] ; exact mul_neg_1
+
+    theorem neg_mul {x y : ℤ} : - (x * y) = -x * y := by
+      rw  [ ← neg_1_mul
+          , mul_assoc
+          , neg_1_mul]
+    theorem neg_mul_right {x y : ℤ} : - (x * y) = x * -y := by
+      rw  [ mul_comm
+          , neg_mul
+          , mul_comm]
+
+    theorem neg_mul_neg {x y : ℤ} : (-x) * (-y) = x * y := by
+      rw [← neg_mul, ← neg_mul_right, neg_neg]
+
+    theorem add_left_cancel
+      {c x y : ℤ}
+      : c + x = c + y
+      → x = y
+      := by
+        apply c.indOn ; intro (a, b)
+        apply x.indOn ; intro (p, q)
+        apply y.indOn ; intro (x, y)
+        repeat rw [add_mk]
+        intro h
+        have h : (a + p) + (b + y) = (a + x) + (b + q) := ℤ.exact h
+        repeat rw [←ℕ.results.arithmetic.add_assoc] at h
+        have h := ℕ.results.arithmetic.add_left_cancel h
+        repeat rw [ℕ.results.arithmetic.add_assoc] at h
+        rw [ℕ.results.arithmetic.add_right_comm y, ℕ.results.arithmetic.add_right_comm q] at h
+        have h := ℕ.results.arithmetic.add_right_cancel h
+        apply ℤ.sound
+        exact h
+    theorem add_right_cancel
+      {c x y : ℤ}
+      : x + c = y + c
+      → x = y
+      := by
+        repeat rw [add_comm _ c]
+        exact add_left_cancel
+
+    theorem mul_ne_zero
+      {x y : ℤ}
+      : x ≠ 0
+      → y ≠ 0
+      → x * y ≠ 0
+      := by
+        apply x.indOn ; intro (a, b)
+        apply y.indOn ; intro (x, y)
+        intro h_ab_ne_0 h_xy_ne_0 h_prod_eq_0
+        rw [mul_mk] at h_prod_eq_0
+        rw [←ntn_zero] at *
+        have h_ab_ne_0 : a ≠ b := by
+          intro h_a_eq_b
+          rw [h_a_eq_b] at h_ab_ne_0
+          have : mk (b, b) = mk (0, 0) := by
+            apply ℤ.sound
+            show b + 0 = 0 + b
+            exact ℕ.results.arithmetic.add_comm b 0
+          contradiction -- `mk (b, b) = mk (0, 0)` and `mk (b, b) ≠ mk (0, 0)`
+        have h_xy_ne_0 : x ≠ y := by -- same proof as last one
+          intro h_x_eq_y
+          rw [h_x_eq_y] at h_xy_ne_0
+          have : mk (y, y) = mk (0, 0) := by
+            apply ℤ.sound
+            show y + 0 = 0 + y
+            exact ℕ.results.arithmetic.add_comm y 0
+          contradiction
+        have h_prod_eq_0 : (a * x + b * y) + 0 = 0 + (a * y + b * x) := ℤ.exact h_prod_eq_0
+        rw  [ ℕ.results.arithmetic.add_assoc
+            , ℕ.results.arithmetic.add_zero
+            , ℕ.results.arithmetic.zero_add
+            ] at h_prod_eq_0
+        have h_ab := ℕ.results.order.trichotomy a b
+        cases h_ab
+        case inl h_a_lt_b =>
+          have ⟨δ, h_δ, h_δ_ne_0⟩ := h_a_lt_b
+          rw  [ h_δ
+              , ℕ.results.arithmetic.add_mul
+              , ℕ.results.arithmetic.add_mul
+              , @ℕ.results.arithmetic.add_assoc (a * y)
+              , ℕ.results.arithmetic.add_comm (a * y) (a * x)
+              , ← @ℕ.results.arithmetic.add_assoc (a * x)
+              ] at h_prod_eq_0
+          have h_prod_eq_0 :=
+            h_prod_eq_0
+            |> ℕ.results.arithmetic.add_left_cancel
+            |> ℕ.results.arithmetic.add_left_cancel
+            |> ℕ.results.arithmetic.mul_left_cancel h_δ_ne_0
+            |> Eq.symm
+          contradiction -- `x = y` and `x ≠ y`
+        case inr h_ab =>
+          cases h_ab
+          case inl h_a_eq_b => contradiction
+          case inr h_b_lt_a => -- Same proof as the `a < b` case
+          have ⟨δ, h_δ, h_δ_ne_0⟩ := h_b_lt_a
+          rw  [ h_δ
+              , ℕ.results.arithmetic.add_mul
+              , ℕ.results.arithmetic.add_mul
+              , ℕ.results.arithmetic.add_comm (b * x)
+              , ℕ.results.arithmetic.add_right_comm (b * y)
+              , ℕ.results.arithmetic.add_comm (b * y)
+              ] at h_prod_eq_0
+          have h_prod_eq_0 :=
+            h_prod_eq_0
+            |> ℕ.results.arithmetic.add_right_cancel
+            |> ℕ.results.arithmetic.add_right_cancel
+            |> ℕ.results.arithmetic.mul_left_cancel h_δ_ne_0
+          contradiction
+
+    -- NOTE: Uses classical logic
+    theorem mul_eq_zero {x y : ℤ} : x * y = 0 ↔ x = 0 ∨ y = 0 := by
+      constructor
+      case mpr =>
+        intro h ; cases h <;> (rename_i h ; rw [h] ; (first | rw [zero_mul] | rw [mul_zero]))
+      case mp =>
+        intro h_xy_eq_0
+        apply Classical.byContradiction
+        rw [not_or]
+        intro ⟨h_x_ne_0, h_y_ne_0⟩
+        exact mul_ne_zero h_x_ne_0 h_y_ne_0 h_xy_eq_0
+    /-- Alternative name for `ℤ.arith.mul_eq_zero`. -/
+    abbrev null_factor {x y : ℤ} : x * y = 0 ↔ x = 0 ∨ y = 0 := mul_eq_zero
+
   end arith
 
 
@@ -550,6 +672,7 @@ namespace ℤ
       rw [sub_eq_add_neg, zero_add]
     theorem sub_zero {x : ℤ} : x - 0 = x := by
       rw [sub_eq_add_neg, neg_zero, add_zero]
+
   end arith
 
 
@@ -608,6 +731,17 @@ namespace ℤ
     theorem add_mul {a b x : ℤ} : (a + b) * x = a * x + b * x := by
       rw [mul_comm _ x, mul_comm a _, mul_comm b _]
       exact mul_add ..
+
+    theorem mul_sub {a x y : ℤ} : a * (x - y) = a * x - a * y := by
+      rw  [ sub_eq_add_neg
+          , mul_add
+          , sub_eq_add_neg
+          , ← neg_mul_right]
+    theorem sub_mul {a b x : ℤ} : (a - b) * x = a * x - b * x := by
+      rw  [ mul_comm
+          , mul_sub
+          , mul_comm x
+          , mul_comm x]
   end arith
 
 
@@ -636,6 +770,33 @@ namespace ℤ
       constructor
       case mp  => exact eq_of_sub_eq_zero
       case mpr => intro h ; rw [h, sub_self]
+
+    theorem mul_left_cancel
+      {c x y : ℤ}
+      : c ≠ 0
+      → c * x = c * y
+      → x = y
+      := by
+        intro h_c_ne_0
+        intro h
+        have : c * (x - y) = 0 := calc c * (x - y)
+          _ = c * x - c * y := by rw [mul_sub]
+          _ = c * y - c * y := by rw [h]
+          _ = 0             := sub_self
+        have : c = 0 ∨ x - y = 0 := null_factor.mp this
+        cases this
+        case inl => contradiction
+        case inr this =>
+        apply eq_of_sub_eq_zero
+        assumption
+    theorem mul_right_cancel
+      {c x y : ℤ}
+      : c ≠ 0
+      → x * c = y * c
+      → x = y
+      := by
+        repeat rw [mul_comm _ c]
+        exact mul_left_cancel
 
     theorem add_sub_assoc {x y z : ℤ} : x + (y - z) = x + y - z := calc x + (y - z)
       _ = x + (y + -z)  := by rw [sub_eq_add_neg]
@@ -962,21 +1123,270 @@ namespace ℤ
 
 
 
+  /- SECTION: Results concerning the units `1` and `-1`. -/
+  /-- The statement that a element of `ℤ` has a multiplicative inverse (in `ℤ`). -/
+  def invertible (z : ℤ) : Prop := ∃ (i : ℤ), z * i = 1
+  namespace arith
+    theorem one_invertible : ℤ.invertible 1 := by
+      exists 1
+    theorem neg_one_invertible : ℤ.invertible (-1) := by
+      exists -1
+
+    theorem invertible_of_mul_one {x y : ℤ} : x * y = 1 → x.invertible ∧ y.invertible := by
+      intro h
+      constructor
+      · exists y
+      · exists x
+        rw [mul_comm]
+        assumption
+
+    theorem zero_ne_one : (0 : ℤ) ≠ (1 : ℤ) := by
+      rw [← ntn_zero, ← ntn_one]
+      intro h
+      have h : (0 : ℕ) + 0 = 1 + 0 := ℤ.exact h
+      rw [ℕ.results.arithmetic.add_zero, ℕ.results.arithmetic.add_zero] at h
+      injection h
+
+    theorem one_ne_neg_one : (1 : ℤ) ≠ (-1 : ℤ) := by
+      rw [← ntn_one, neg_mk]
+      intro h
+      have h : (1 : ℕ) + 1 = 0 + 0 := h |> ℤ.exact
+      rw  [ ← ℕ.results.ntn.succ_zero_eq_1
+          , ℕ.results.arithmetic.add_succ
+          , ℕ.results.arithmetic.add_zero
+          ] at h
+      injection h
+
+    theorem ne_zero_of_invertible {x : ℤ} : x.invertible → x ≠ 0 := by
+      intro ⟨X, h_X⟩ h_x_eq_0
+      rw [h_x_eq_0, zero_mul] at h_X
+      have : (0 : ℤ) ≠ 1 := zero_ne_one
+      contradiction -- `0 = 1`
+
+    -- I forgor to prove this one earlier
+    theorem mul_right_comm
+      {x y : ℤ} (z : ℤ)
+      : x * y * z = x * z * y
+      := calc (x * y) * z
+        _ = x * (y * z) := by rw [←mul_assoc]
+        _ = x * (z * y) := by rw [mul_comm y]
+        _ = (x * z) * y := by rw [mul_assoc]
+
+    theorem mul_invertible {x y : ℤ} : invertible x → invertible y → invertible (x * y) := by
+      intro ⟨X, h_X⟩ ⟨Y, h_Y⟩
+      exists X * Y
+      show x * y * (X * Y) = 1
+      calc x * y * (X * Y)
+        _ = x * y * X * Y := mul_assoc
+        _ = x * X * y * Y := by rw [mul_right_comm X]
+        _ = 1 * y * Y     := by rw [h_X]
+        _ = y * Y         := by rw [one_mul]
+        _ = 1             := h_Y
+
+    theorem invertible_weird
+      {x y : ℤ}
+      : invertible (x * y)
+      → invertible x
+      → invertible y
+      := by
+        intro ⟨XY, h_XY⟩ ⟨X, h_X⟩
+        have this := h_XY
+        rw [mul_comm x, mul_right_comm] at this
+        have : y * XY * x * X = X := calc y * XY * x * X
+          _ = 1 * X := by rw [this]
+          _ = X     := one_mul
+        rw [←mul_assoc, h_X, mul_one] at this
+        have : y = X * (x * y) := calc y
+          _ = y * 1               := by rw [mul_one]
+          _ = y * ((x * y) * XY)  := by rw [←h_XY]
+          _ = y * (XY * (x * y))  := by rw [mul_comm _ XY]
+          _ = (y * XY) * (x * y)  := by rw [mul_assoc]
+          _ = X * (x * y)         := by rw [this]
+        rw [this]
+        have h_X_inv : X.invertible := invertible_of_mul_one h_X |> And.right
+        have h_xy_inv : (x * y).invertible := invertible_of_mul_one h_XY |> And.left
+        have h_Xxy_inv : invertible (X * (x * y)) := mul_invertible h_X_inv h_xy_inv
+        assumption
+
+    -- NOTE: Uses classical logic
+    theorem invertible_of_mul_invertible
+      {x y : ℤ}
+      : invertible (x * y)
+      → invertible x ∧ invertible y
+      := by
+        intro h_xy_inv
+        have ⟨XY, h_XY⟩ := h_xy_inv
+        by_cases x.invertible
+        case pos h_x_inv =>
+          constructor
+          · assumption
+          · apply @invertible_weird x y <;> assumption
+        case neg h_not_x_inv =>
+          -- show a contradiction
+          rw [←mul_assoc] at h_XY
+          have h_x_inv : x.invertible := by
+            exists y * XY
+          contradiction
+
+    -- NOTE: Uses classical logic
+    -- Four of the exact same proof >:(
+    theorem solve_invertible
+      {x : ℤ}
+      : x.invertible
+      → x = 1 ∨ x = -1
+      := by
+        have ⟨n, h_n⟩ := x.existsCanonRep
+        intro ⟨X, h_X⟩
+        have ⟨N, h_N⟩ := X.existsCanonRep
+        cases h_n
+        case inl h_n =>
+          cases h_N
+          case inl h_N =>
+            apply Or.inl
+            show x = 1
+            rw [h_n, ←ntn_one]
+            apply ℤ.sound
+            show n + 0 = 1 + 0
+            rw [ℕ.results.arithmetic.add_zero, ℕ.results.arithmetic.add_zero]
+            rw [ h_n
+                , h_N
+                , ←ntn_one
+                , mul_mk
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.mul_zero
+                , ℕ.results.arithmetic.add_zero
+                , ℕ.results.arithmetic.add_zero
+                ] at h_X
+            have h_X : n * N + 0 = 1 + 0 := h_X |> ℤ.exact
+            rw [ℕ.results.arithmetic.add_zero, ℕ.results.arithmetic.add_zero] at h_X
+            exact h_X |> ℕ.results.arithmetic.args_1_of_mul_1 |> And.left
+          case inr h_N =>
+            -- show a contradiction
+            rw  [ h_n
+                , h_N
+                , ←ntn_one
+                , mul_mk
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.mul_zero
+                , ℕ.results.arithmetic.add_zero
+                , ℕ.results.arithmetic.add_zero
+                ] at h_X
+            have h_X : 0 + 0 = 1 + n * N := h_X |> ℤ.exact
+            rw  [ ℕ.results.arithmetic.add_zero
+                , ←ℕ.results.ntn.succ_zero_eq_1
+                , ℕ.results.arithmetic.succ_add
+                ] at h_X
+            injection h_X -- contradiction: `0` and `.succ` have disjoint images
+        case inr h_n =>
+          cases h_N
+          case inl h_N =>
+            -- show a contradiction
+            rw  [ h_n
+                , h_N
+                , ←ntn_one
+                , mul_mk
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.mul_zero
+                , ℕ.results.arithmetic.zero_add
+                , ℕ.results.arithmetic.zero_add
+                ] at h_X
+            have h_X : 0 + 0 = 1 + n * N := h_X |> ℤ.exact
+            rw  [ ℕ.results.arithmetic.add_zero
+                , ←ℕ.results.ntn.succ_zero_eq_1
+                , ℕ.results.arithmetic.succ_add
+                ] at h_X
+            injection h_X -- contradiction: `0` and `.succ` have disjoint images
+          case inr h_N =>
+            apply Or.inr
+            show x = -1
+            rw [h_n, ←ntn_one]
+            apply ℤ.sound
+            show 0 + 1 = 0 + n
+            rw [ℕ.results.arithmetic.zero_add, ℕ.results.arithmetic.zero_add]
+            rw [ h_n
+                , h_N
+                , ←ntn_one
+                , mul_mk
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.mul_zero
+                , ℕ.results.arithmetic.zero_add
+                , ℕ.results.arithmetic.add_zero
+                ] at h_X
+            have h_X : n * N + 0 = 1 + 0 := h_X |> ℤ.exact
+            rw [ℕ.results.arithmetic.add_zero, ℕ.results.arithmetic.add_zero] at h_X
+            exact h_X |> ℕ.results.arithmetic.args_1_of_mul_1 |> And.left |> Eq.symm
+
+    theorem solve_mul_eq_one
+      {x y : ℤ}
+      : x * y = 1
+      → (x = 1 ∧ y = 1)
+        ∨ (x = -1 ∧ y = -1)
+      := by
+        intro h
+        have ⟨h_x_inv, h_y_inv⟩ := invertible_of_mul_one h
+        have h_x := solve_invertible h_x_inv
+        have h_y := solve_invertible h_y_inv
+        cases h_x
+        case inl h_x =>
+          cases h_y
+          case inl h_y =>
+            apply Or.inl ; constructor <;> assumption
+          case inr h_y =>
+            -- show a contradiction
+            rw [h_x, h_y, mul_neg_1, Eq.comm] at h
+            have : (1 : ℤ) ≠ -1 := one_ne_neg_one
+            contradiction -- `1 = -1`
+        case inr h_x =>
+          cases h_y
+          case inl h_y =>
+            -- show a contradiction
+            rw [h_x, h_y, neg_1_mul, Eq.comm] at h
+            have : (1 : ℤ) ≠ -1 := one_ne_neg_one
+            contradiction -- `1 = -1`
+          case inr h_y =>
+            apply Or.inr ; constructor <;> assumption
+
+  end arith
+
+
+
   /- SECTION: Divisibility -/
   /-- The divisibility relation on `ℤ`. -/
   def divides (d x : ℤ) : Prop := ∃ (q : ℤ), x = d * q
   @[inherit_doc] infix:50 " ∣ " => divides
 
   namespace divisibility
-    open arith
+    open arith order
 
     theorem divides_refl (x : ℤ) : x ∣ x := by
       exists 1
       rw [mul_one]
-    theorem divides_symm {x y : ℤ} : x ∣ y → y ∣ x → x = y ∨ x = -y := by
-      intro ⟨q, h_q⟩ ⟨r, h_r⟩
-      rw [h_q] at h_r
-      admit
+    theorem divides_antisymm {x y : ℤ} : x ∣ y → y ∣ x → x = y ∨ x = -y := by
+      intro ⟨d, h_d⟩ ⟨e, h_e⟩
+      rw [h_d] at h_e
+      by_cases h : x = 0
+      case pos => -- `h : x = 0`
+        apply Or.inl
+        -- show `x = y = 0`
+        rw [h]
+        rw [h, zero_mul] at h_d
+        rw [h_d]
+      case neg => -- `h : x ≠ 0`
+        conv at h_e => { congr ; {rw [← @mul_one x]} ; {rw [← mul_assoc]} }
+        have := h_e |> mul_left_cancel h |> Eq.symm |> solve_mul_eq_one
+        cases this <;> (rename_i this ; have this := this.left ; rw [this] at h_d)
+        case inl =>
+          apply Or.inl
+          rw [mul_one, Eq.comm] at h_d
+          assumption
+        case inr =>
+          apply Or.inr
+          rw [mul_neg_1, Eq.comm, neg_eq_comm, Eq.comm] at h_d
+          assumption
   end divisibility
 
   -- def prime (p : ℤ) : Prop := p > 1 ∧ ∀ (d : ℤ)

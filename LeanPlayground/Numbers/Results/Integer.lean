@@ -121,12 +121,86 @@ namespace Numbers.ℤ.results
     theorem mul_zero {x : ℤ} : x * 0 = 0 := arith.mul_zero
     theorem zero_mul {x : ℤ} : 0 * x = 0 := arith.zero_mul
 
-    theorem mul_neg_1 {x : ℤ} : x * (-1) = -x := arith.mul_neg_1
-    theorem neg_1_mul {x : ℤ} : (-1) * x = -x := arith.neg_1_mul
+    theorem mul_neg_one {x : ℤ} : x * (-1) = -x := arith.mul_neg_1
+    theorem neg_one_mul {x : ℤ} : (-1) * x = -x := arith.neg_1_mul
+
+    theorem mul_sub {a x y : ℤ} : a * (x - y) = a * x - a * y := arith.mul_sub
+    theorem sub_mul {a b x : ℤ} : (a - b) * x = a * x - b * x := arith.sub_mul
+
+    theorem neg_mul {x y : ℤ} : - (x * y) = -x * y := arith.neg_mul
+    theorem neg_mul_right {x y : ℤ} : - (x * y) = x * -y := arith.neg_mul_right
+    theorem neg_mul_neg {x y : ℤ} : (-x) * (-y) = x * y := arith.neg_mul_neg
 
     theorem eq_iff_sub_eq_zero {x y : ℤ} : x - y = 0 ↔ x = y := arith.eq_iff_sub_eq_zero
 
     theorem neg_eq_comm {x y : ℤ} : -x = y ↔ -y = x := arith.neg_eq_comm
+
+    /-- The null factor law; see also `null_factor`. -/
+    theorem mul_eq_zero {x y : ℤ} : x * y = 0 ↔ x = 0 ∨ y = 0 := arith.mul_eq_zero
+    /-- Alternative name for `ℤ.arith.mul_eq_zero`. -/
+    theorem null_factor {x y : ℤ} : x * y = 0 ↔ x = 0 ∨ y = 0 := arith.null_factor
+
+    theorem mul_ne_zero
+      {x y : ℤ}
+      : x ≠ 0
+      → y ≠ 0
+      → x * y ≠ 0
+      := arith.mul_ne_zero
+
+    theorem add_left_cancel
+      {c x y : ℤ}
+      : c + x = c + y
+      → x = y
+      := arith.add_left_cancel
+    theorem add_right_cancel
+      {c x y : ℤ}
+      : x + c = y + c
+      → x = y
+      := arith.add_right_cancel
+    theorem mul_left_cancel
+      {c x y : ℤ}
+      : c ≠ 0
+      → c * x = c * y
+      → x = y
+      := arith.mul_left_cancel
+    theorem mul_right_cancel
+      {c x y : ℤ}
+      : c ≠ 0
+      → x * c = y * c
+      → x = y
+      := arith.mul_right_cancel
+
+    theorem mul_right_comm
+      {x y : ℤ} (z : ℤ)
+      : x * y * z = x * z * y
+      := arith.mul_right_comm z
+
+    theorem zero_ne_one : (0 : ℤ) ≠ (1 : ℤ) := arith.zero_ne_one
+    theorem one_ne_neg_one : (1 : ℤ) ≠ (-1 : ℤ) := arith.one_ne_neg_one
+
+    theorem one_invertible : ℤ.invertible 1 := arith.one_invertible
+    theorem neg_one_invertible : ℤ.invertible (-1) := arith.neg_one_invertible
+
+    theorem invertible_of_mul_one {x y : ℤ} : x * y = 1 → x.invertible ∧ y.invertible := arith.invertible_of_mul_one
+    theorem ne_zero_of_invertible {x : ℤ} : x.invertible → x ≠ 0 := arith.ne_zero_of_invertible
+    theorem mul_invertible {x y : ℤ} : invertible x → invertible y → invertible (x * y) := arith.mul_invertible
+    theorem invertible_of_mul_invertible
+      {x y : ℤ}
+      : invertible (x * y)
+      → invertible x ∧ invertible y
+      := arith.invertible_of_mul_invertible
+
+    theorem solve_invertible
+      {x : ℤ}
+      : x.invertible
+      → x = 1 ∨ x = -1
+      := arith.solve_invertible
+    theorem solve_mul_eq_one
+      {x y : ℤ}
+      : x * y = 1
+      → (x = 1 ∧ y = 1)
+        ∨ (x = -1 ∧ y = -1)
+      := arith.solve_mul_eq_one
 
     -- More results will come to mind as they prove useful
   end ring
@@ -174,7 +248,8 @@ namespace Numbers.ℤ.results
 
   -- SECTION: Basic number theory
   namespace number_theory
-    --
+    theorem divides_refl (x : ℤ) : x ∣ x := divisibility.divides_refl x
+    theorem divides_antisymm {x y : ℤ} : x ∣ y → y ∣ x → x = y ∨ x = -y := divisibility.divides_antisymm
   end number_theory -- thank heavens
 
 
