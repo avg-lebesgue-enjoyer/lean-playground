@@ -40,6 +40,10 @@ namespace Numbers.ℤ.results
   -- SECTION: Notation
   /-- The canonical quotient map for `ℤ := ℕ × ℕ ⧸ same_difference`. -/
   def ℤ.mk : ℕ × ℕ → ℤ := Numbers.ℤ.mk
+  theorem add_ntn {x y : ℤ} : x.add y = x + y := rfl
+  theorem mul_ntn {x y : ℤ} : x.mul y = x * y := rfl
+  theorem le_ntn {x y : ℤ} : x.le y = (x ≤ y) := rfl
+  theorem lt_ntn {x y : ℤ} : x.lt y = (x < y) := rfl
 
 
 
@@ -91,6 +95,7 @@ namespace Numbers.ℤ.results
     theorem add_right_comm {x y : ℤ} (z : ℤ) : x + y + z = x + z + y := arith.add_right_comm z
 
     theorem neg_neg {x : ℤ} : -(-x) = x := arith.neg_neg
+    /-- Sorry, I wanted to call this `neg_add`, but I've already given that name to a more important result... -/
     theorem neg_add' {x y : ℤ} : - (x + y) = -x + -y := arith.neg_add'
     theorem neg_zero : -(0 : ℤ) = 0 := arith.neg_zero
 
@@ -98,10 +103,14 @@ namespace Numbers.ℤ.results
     theorem sub_eq_add_neg {x y : ℤ} : x - y = x + -y := arith.sub_eq_add_neg
     theorem sub_self {x : ℤ} : x - x = 0 := arith.sub_self
     theorem sub_neg {x y : ℤ} : x - -y = x + y := arith.sub_neg
-    /-- Sorry, I wanted to call this `neg_add`, but I've already given that name to a more important result... -/
     theorem neg_sub {x y : ℤ} : - (x + y) = -x - y := arith.neg_sub
     theorem zero_sub {x : ℤ} : 0 - x = -x := arith.zero_sub
     theorem sub_zero {x : ℤ} : x - 0 = x := arith.sub_zero
+    theorem swap_sub {x y : ℤ} : - (x - y) = y - x := arith.swap_sub
+
+    theorem eq_of_sub_eq_zero {x y : ℤ} : x - y = 0 → x = y := arith.eq_of_sub_eq_zero
+    theorem add_sub_assoc {x y z : ℤ} : x + (y - z) = x + y - z := arith.add_sub_assoc
+    theorem sub_add {x y z : ℤ} : x - (y + z) = x - y - z := arith.sub_add
 
     theorem mul_zero {x : ℤ} : x * 0 = 0 := arith.mul_zero
     theorem zero_mul {x : ℤ} : 0 * x = 0 := arith.zero_mul
@@ -115,14 +124,31 @@ namespace Numbers.ℤ.results
 
 
   -- SECTION: The orders `<` and `≤` on `ℤ`
+  namespace ordered_ring
+    /-- Defining property of `ℤ.le`. -/
+    theorem le_mk {x y : ℤ} : x ≤ y ↔ ∃ (a : ℕ), y - x = ℤ.mk (a, 0) := order.le_mk
+
+    theorem le_refl (x : ℤ) : x ≤ x := order.le_refl x
+    theorem le_antisymm {x y : ℤ} : x ≤ y → y ≤ x → x = y := order.le_antisymm
+    theorem le_trans {x y z : ℤ} : x ≤ y → y ≤ z → x ≤ z := order.le_trans
+
+    theorem le_add_hom {a b x y : ℤ} : a ≤ b → x ≤ y → a + x ≤ b + y := order.le_add_hom
+    theorem le_neg_antihom {x y : ℤ} : x ≤ y → -y ≤ -x := order.le_neg_antihom
+
+    /-- Defining property of `ℤ.lt`. -/
+    theorem lt_iff_le_and_ne {x y : ℤ} : x < y ↔ x ≤ y ∧ x ≠ y := order.lt_iff_le_and_ne
+    theorem le_iff_lt_or_eq {x y : ℤ} : x ≤ y ↔ x < y ∨ x = y := order.le_iff_lt_or_eq
+
+    theorem le_or_eq_iff_le {x y : ℤ} : x ≤ y ∨ x = y ↔ x ≤ y := order.le_or_eq_iff_le
+
+    theorem lt_irrefl (x : ℤ) : ¬ (x < x) := order.lt_irrefl x
+    theorem lt_asymm {x y : ℤ} : x < y → ¬ (y < x) := order.lt_asymm
+    theorem lt_trans {x y z : ℤ} : x < y → y < z → x < z := order.lt_trans
+  end ordered_ring
 
 
 
   /- SECTION: Results yet to be proven
-    [2.] Order
-      Non-negative numbers (`nonneg x := x = ∃ a, x = ℤ.mk (a, 0)`)
-      `<` and `≤`
-      Include compatability with arithmetic operations (requires such lemmas at the `nonneg` level)
     [3.] Euclidean division and Bezout's lemma
       Primality (include respecting `ℕ.prime` along `ℕ ↪ ℤ`)
       Euclidean division (include respecting `ℕ.euclidean_division` along `ℕ ↪ ℤ`)

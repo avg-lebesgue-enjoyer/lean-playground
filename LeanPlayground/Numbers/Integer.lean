@@ -577,12 +577,179 @@ namespace ℤ
 
 
 
-  /- SECTION: Right commutativity my beloved -/
+  /- SECTION: Right commutativity my beloved, `swap_sub`, `eq_of_sub_eq_zero` -/
   namespace arith
     theorem add_right_comm {x y : ℤ} (z : ℤ) : x + y + z = x + z + y := by
       repeat rw [← add_assoc]
       rw [add_comm y]
+
+    theorem swap_sub {x y : ℤ} : - (x - y) = y - x := by
+      rw [sub_eq_add_neg, sub_eq_add_neg, neg_add', neg_neg, add_comm]
+
+    theorem eq_of_sub_eq_zero {x y : ℤ} : x - y = 0 → x = y := by
+      intro h
+      calc x
+        _ = x + 0         := add_zero.symm
+        _ = x + (y - y)   := by rw [←sub_self]
+        _ = x + (y + -y)  := by rw [sub_eq_add_neg]
+        _ = x + (-y + y)  := by rw [add_comm y]
+        _ = x + -y + y    := by rw [add_assoc]
+        _ = x - y + y     := by rw [←sub_eq_add_neg]
+        _ = 0 + y         := by rw [h]
+        _ = y             := zero_add
+
+    theorem add_sub_assoc {x y z : ℤ} : x + (y - z) = x + y - z := calc x + (y - z)
+      _ = x + (y + -z)  := by rw [sub_eq_add_neg]
+      _ = (x + y) + -z  := by rw [add_assoc]
+      _ = x + y - z     := by rw [sub_eq_add_neg]
+
+    theorem sub_add {x y z : ℤ} : x - (y + z) = x - y - z := by
+      rw [sub_eq_add_neg, neg_add', add_assoc, sub_eq_add_neg, sub_eq_add_neg]
   end arith
+
+
+
+  /- SECTION: `≤`: Definition, partial order, compatability -/
+  def le (x y : ℤ) : Prop :=
+    ∃ (a : ℕ), y - x = ℤ.mk (a, 0)
+  instance : LE ℤ where le := ℤ.le
+  namespace order
+    open arith
+
+    theorem le_ntn {x y : ℤ} : x.le y = (x ≤ y) := rfl
+
+    /-- Defining property of `ℤ.le`. -/
+    theorem le_mk {x y : ℤ} : x ≤ y ↔ ∃ (a : ℕ), y - x = ℤ.mk (a, 0) := by
+      show x.le y ↔ ∃ a, y - x = ℤ.mk (a, 0)
+      rfl
+
+    theorem le_refl (x : ℤ) : x ≤ x := by
+      exists 0
+      rw [ntn_zero]
+      exact arith.sub_self
+    theorem le_antisymm {x y : ℤ} : x ≤ y → y ≤ x → x = y := by
+      intro ⟨a, h_a⟩ ⟨b, h_b⟩
+      rw [←swap_sub, h_a, neg_mk] at h_b
+      have h : 0 + 0 = b + a := ℤ.exact h_b
+      rw [ℕ.results.arithmetic.zero_add] at h
+      have h := ℕ.results.arithmetic.args_0_of_add_0 h.symm |> And.right
+      rw [h, ntn_zero] at h_a
+      exact eq_of_sub_eq_zero h_a |> .symm
+    theorem le_trans {x y z : ℤ} : x ≤ y → y ≤ z → x ≤ z := by
+      intro ⟨a, h_a⟩ ⟨b, h_b⟩
+      have : z - x = ℤ.mk (b + a, 0) := calc z - x
+        _ = z - x + 0                 := by rw [add_zero]
+        _ = z - x + (y - y)           := by rw [sub_self]
+        _ = z - x + (y + -y)          := by rw [@sub_eq_add_neg y]
+        _ = z + -x + (y + -y)         := by rw [@sub_eq_add_neg z]
+        _ = z + -x + y + -y           := by repeat rw [add_assoc]
+        _ = z + -y + -x + y           := by repeat rw [add_right_comm (-y)]
+        _ = z + -y + y + -x           := by rw [add_right_comm y]
+        _ = z - y + y + -x            := by rw [sub_eq_add_neg]
+        _ = z - y + y - x             := by rw [←sub_eq_add_neg]
+        _ = z - y + (y - x)           := by rw [←add_sub_assoc]
+        _ = ℤ.mk (b, 0) + ℤ.mk (a, 0) := by rw [h_b, h_a]
+        _ = ℤ.mk (b + a, 0)           := add_mk
+      exists b + a
+
+    theorem le_add_hom {a b x y : ℤ} : a ≤ b → x ≤ y → a + x ≤ b + y := by
+      intro ⟨p, h_p⟩ ⟨q, h_q⟩
+      show ∃ (r : ℕ), (b + y) - (a + x) = ℤ.mk (r, 0)
+      conv => {
+        arg 1 ; intro r ;
+        rw  [   sub_add
+            ,   sub_eq_add_neg
+            ,   sub_eq_add_neg
+            ,   add_right_comm (-a)
+            , ← @sub_eq_add_neg b
+            , ←add_assoc
+            , ← @sub_eq_add_neg y
+            ,   h_p
+            ,   h_q
+            ,   add_mk
+            ,   ℕ.results.arithmetic.add_zero]
+      }
+      exists p + q
+
+    theorem le_neg_antihom {x y : ℤ} : x ≤ y → -y ≤ -x := by
+      intro ⟨a, h_a⟩
+      show ∃ b, -x - -y = mk (b, 0)
+      conv => {
+        arg 1 ; intro b ;
+        rw [sub_eq_add_neg, neg_neg, add_comm, ←sub_eq_add_neg]
+      }
+      exists a
+  end order
+
+
+
+  /- SECTION: `<`: Definition, etc. -/
+  def lt (x y : ℤ) : Prop := x ≤ y ∧ x ≠ y
+  instance : LT ℤ where lt := ℤ.lt
+  namespace order
+    open arith
+
+    theorem lt_ntn {x y : ℤ} : x.lt y = (x < y) := rfl
+
+    theorem lt_iff_le_and_ne {x y : ℤ} : x < y ↔ x ≤ y ∧ x ≠ y := by
+      rw [←lt_ntn, ℤ.lt]
+
+    theorem le_or_eq_iff_le {x y : ℤ} : x ≤ y ∨ x = y ↔ x ≤ y := by
+      constructor
+      case mp =>
+        intro h ; cases h
+        case inl h => assumption
+        case inr h => rw [h] ; exact le_refl y
+      case mpr => exact Or.inl
+
+    -- NOTE: Uses classical logic
+    theorem le_iff_lt_or_eq {x y : ℤ} : x ≤ y ↔ x < y ∨ x = y := by
+      rw [lt_iff_le_and_ne]
+      conv => {
+        rhs
+        rw [and_or_right]
+        congr
+        case a => {
+          rw [le_or_eq_iff_le]
+        }
+      }
+      constructor
+      case mpr => exact And.left
+      case mp =>
+        intro h
+        constructor
+        · assumption
+        · exact Classical.em _ |> Or.symm
+
+    theorem lt_irrefl (x : ℤ) : ¬ (x < x) := by
+      intro h
+      rw [lt_iff_le_and_ne] at h
+      have h := h.right
+      contradiction -- `x ≠ x`
+
+    -- NOTE: Uses classical logic
+    theorem lt_asymm {x y : ℤ} : x < y → ¬ (y < x) := by
+      repeat rw [lt_iff_le_and_ne]
+      intro ⟨h_x_le_y, _⟩
+      rw [not_and]
+      intro h_y_le_x
+      have := le_antisymm h_x_le_y h_y_le_x
+      rw [Classical.not_not, Eq.comm]
+      assumption
+
+    theorem lt_trans {x y z : ℤ} : x < y → y < z → x < z := by
+      intro h_xy h_yz
+      rw [lt_iff_le_and_ne]
+      constructor
+      case left =>
+        rw [lt_iff_le_and_ne] at h_xy ; have h_xy := h_xy.left
+        rw [lt_iff_le_and_ne] at h_yz ; have h_yz := h_yz.left
+        exact le_trans h_xy h_yz
+      case right =>
+        intro h
+        rw [h] at h_xy
+        exact lt_asymm h_xy h_yz
+  end order
 end ℤ
 
 end Numbers
