@@ -204,6 +204,8 @@ namespace Numbers.ℤ.results
 
     theorem neg_inj {x y : ℤ} : -x = -y ↔ x = y := arith.neg_inj
 
+    theorem neg_zero_eq_zero : - (0 : ℤ) = (0 : ℤ) := arith.neg_zero_eq_zero
+
     -- More results will come to mind as they prove useful
   end ring
 
@@ -248,6 +250,11 @@ namespace Numbers.ℤ.results
     theorem lt_iff_le_sub_one {x y : ℤ} : x < y ↔ x ≤ y - 1 := order.lt_iff_le_sub_one
     theorem nonneg_of_mul_nonneg {x y : ℤ} : 0 ≤ x → 0 ≤ y → 0 ≤ x * y := order.nonneg_of_mul_nonneg
     theorem le_iff_sub_nonneg {x y : ℤ} : x ≤ y ↔ 0 ≤ y - x := order.le_iff_sub_nonneg
+
+    theorem lt_neg_swap {x y : ℤ} : -x < -y ↔ y < x := order.lt_neg_swap
+    theorem le_neg_swap {x y : ℤ} : -x ≤ -y ↔ y ≤ x := order.le_neg_swap
+    theorem neg_iff_neg_pos {x : ℤ} : x < 0 ↔ 0 < -x := order.neg_iff_neg_pos
+    theorem nonpos_iff_neg_nonneg {x : ℤ} : x ≤ 0 ↔ 0 ≤ -x := order.nonpos_iff_neg_nonneg
   end ordered_ring
 
 
@@ -259,6 +266,20 @@ namespace Numbers.ℤ.results
     theorem divides_trans {x y z : ℤ} : x ∣ y → y ∣ z → x ∣ z := divisibility.divides_trans
     theorem le_of_divides {d x : ℤ} : x > 0 → d ∣ x → d ≤ x := divisibility.le_of_divides
     theorem divides_iff_divides_neg {d x : ℤ} : d ∣ -x ↔ d ∣ x := divisibility.divides_iff_divides_neg
+
+    /-- *Pain* to prove. -/
+    theorem euclidean_division
+      (d x : ℤ)
+      (h_d_pos : 0 < d)
+      : (∃ (q : ℤ) (r : ℕ),
+          x = d * q + r
+          ∧ r < d
+        ) ∧ (∀ (q q' : ℤ) (r r' : ℕ),
+          x = d * q + r → x = d * q' + r'
+          → r < d       → r' < d
+          → q = q' ∧ r = r'
+        )
+      := @euc_div.euclidean_division d x h_d_pos
   end number_theory -- thank heavens
 
 

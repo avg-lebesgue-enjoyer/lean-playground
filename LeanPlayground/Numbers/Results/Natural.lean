@@ -195,4 +195,25 @@ namespace Numbers.ℕ.results
       := ℕ.induction.strong_induction_from
   end induction
 
+
+
+  -- SECTION: Euclidean division
+  namespace euclidean
+    /--
+      **Euclidean division** -- any natural number can be quotient-remainder divided by any nonzero natural number
+      in a unique way.
+    -/
+    theorem division
+      (x d : ℕ)
+      (h_d_ne_0 : d ≠ 0)
+      : (∃ (q r : ℕ),
+        x = d * q + r
+        ∧ r < d)
+      ∧ ∀ (q q' r r' : ℕ),
+        x = d * q + r ∧ x = d * q' + r'
+        ∧ r < d       ∧ r' < d
+        → q = q' ∧ r = r'
+      := not_redoing_this.euclidean_division x d h_d_ne_0
+  end euclidean
+
 end Numbers.ℕ.results

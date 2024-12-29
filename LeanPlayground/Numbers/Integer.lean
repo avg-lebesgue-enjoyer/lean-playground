@@ -819,6 +819,9 @@ namespace ℤ
         rw [ℕ.results.arithmetic.add_comm y, ℕ.results.arithmetic.add_comm p]
         exact h
       constructor <;> apply lemma
+
+    theorem neg_zero_eq_zero : - (0 : ℤ) = (0 : ℤ) := by
+      rw [←ntn_zero, neg_mk]
   end arith
 
 
@@ -1252,6 +1255,38 @@ namespace ℤ
 
     theorem le_iff_sub_nonneg {x y : ℤ} : x ≤ y ↔ 0 ≤ y - x := by
       rw [le_mk, le_mk, sub_zero]
+
+    theorem lt_neg_swap {x y : ℤ} : -x < -y ↔ y < x := by
+      rw [lt_mk, lt_mk]
+      conv => {
+        lhs; arg 1; intro a; lhs; lhs
+        rw  [ sub_eq_add_neg
+            , neg_neg
+            , add_comm
+            , ← sub_eq_add_neg]
+      }
+    theorem le_neg_swap {x y : ℤ} : -x ≤ -y ↔ y ≤ x := by
+      rw [le_mk, le_mk]
+      conv => {
+        lhs; arg 1; intro a; lhs
+        rw  [ sub_eq_add_neg
+            , neg_neg
+            , add_comm
+            , ← sub_eq_add_neg]
+      }
+
+    theorem neg_iff_neg_pos {x : ℤ} : x < 0 ↔ 0 < -x := by
+      conv => {
+        rhs; lhs; rw [← neg_zero_eq_zero]
+      }
+      rw [Iff.comm]
+      exact lt_neg_swap
+    theorem nonpos_iff_neg_nonneg {x : ℤ} : x ≤ 0 ↔ 0 ≤ -x := by
+      conv => {
+        rhs; lhs; rw [← neg_zero_eq_zero]
+      }
+      rw [Iff.comm]
+      exact le_neg_swap
   end order
 
 
@@ -1582,7 +1617,498 @@ namespace ℤ
         assumption
   end divisibility
 
-  -- def prime (p : ℤ) : Prop := p > 1 ∧ ∀ (d : ℤ)
+
+
+  /- SECTION: Primality -/
+  def prime (p : ℤ) : Prop := p > 1 ∧ ∀ (d : ℤ), d ∣ p → d = p ∨ d.invertible
+
+
+
+  /- SECTION: Euclidean division -/
+  namespace euc_div
+    open arith
+    open order
+    open divisibility
+
+    -- This is a lemma; I need to take away the `0 ≤ x` assumption in the actual theorem, for my own sanity
+    -- I need to stop copy-pasting my own code and make more general lemmas instead...
+    theorem euclidean_division_nonneg
+      (d x : ℤ)
+      {h_x_nonneg : 0 ≤ x}
+      {h_d_pos : 0 < d}
+      : (∃ (q : ℤ) (r : ℕ),
+          x = d * q + r
+          ∧ r < d
+        ) ∧ (∀ (q q' : ℤ) (r r' : ℕ),
+          x = d * q + r → x = d * q' + r'
+          → r < d       → r' < d
+          → q = q' ∧ r = r'
+        )
+      := by
+          rw [lt_mk, sub_zero] at h_d_pos
+          have ⟨d', h_d', h_d'_ne_0⟩ := h_d_pos
+          rw [le_mk, sub_zero] at h_x_nonneg
+          have ⟨x', h_x'⟩ := h_x_nonneg
+          have ⟨⟨q', r', h_q'r', h_r'⟩, h_uq⟩ := ℕ.results.euclidean.division x' d' h_d'_ne_0
+          constructor
+          case left =>
+            show ∃ q r, x = d * q + mk (r, 0) ∧ mk (r, 0) < d
+            exists q', r'
+            rw  [ h_d'
+                , h_x'
+                , mul_mk
+                , add_mk
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.add_zero
+                , ℕ.results.arithmetic.mul_zero
+                , ℕ.results.arithmetic.zero_add
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.zero_add
+                , h_q'r'
+                ]
+            constructor
+            · rfl
+            · rw  [ lt_mk
+                  , sub_eq_add_neg
+                  , neg_mk
+                  , add_mk
+                  , ℕ.results.arithmetic.add_zero
+                  , ℕ.results.arithmetic.zero_add
+                  ]
+              have ⟨δ, h_δ, h_δ_ne_0⟩ := h_r'
+              exists δ
+              constructor
+              · apply ℤ.sound
+                show d' + 0 = δ + r'
+                rw  [ ℕ.results.arithmetic.add_zero
+                    , ℕ.results.arithmetic.add_comm
+                    ]
+                assumption
+              · assumption
+          case right =>
+            -- show uniqueness
+            have quotient_nonneg
+              : ∀ (q : ℤ) (r : ℕ),
+                  x = d * q + r
+                  → r < d
+                  → q ≥ 0
+              := by
+                repeat rw [h_d']
+                intro q r h_qr h_r_lt_d
+                have ⟨Q, h_Q⟩ := q.existsCanonRep
+                cases h_Q
+                case inl h_Q =>
+                  exists Q
+                  rw [sub_zero]
+                  assumption
+                case inr h_Q =>
+                  match Q with
+                  | 0 => exists 0 ; rw [sub_zero] ; assumption
+                  | .succ Q =>
+                    -- show a contradiction
+                    have ⟨a, h_a⟩ := h_x_nonneg
+                    rw  [ h_a
+                        , h_Q
+                        , mul_mk
+                        , add_mk
+                        , ℕ.results.arithmetic.mul_zero
+                        , ℕ.results.arithmetic.zero_add
+                        , ℕ.results.arithmetic.zero_mul
+                        , ℕ.results.arithmetic.zero_add
+                        , ℕ.results.arithmetic.mul_zero
+                        , ℕ.results.arithmetic.add_zero
+                        , ℕ.results.arithmetic.add_zero
+                        ] at h_qr
+                    have : a + d' * Q.succ = r + 0 := h_qr |> ℤ.exact
+                    rw [ℕ.results.arithmetic.add_zero] at this
+                    rw  [ lt_mk
+                        , sub_eq_add_neg
+                        , neg_mk
+                        , add_mk
+                        , ℕ.results.arithmetic.add_zero
+                        , ℕ.results.arithmetic.zero_add
+                        ] at h_r_lt_d
+                    have ⟨δ, h_δ, h_δ_ne_0 ⟩ := h_r_lt_d
+                    have h_δ : d' = δ + r := h_δ |> ℤ.exact
+                    rw  [ h_δ
+                        , ℕ.results.arithmetic.add_mul
+                        , ℕ.results.arithmetic.add_assoc
+                        , @ℕ.results.arithmetic.mul_succ r
+                        , ℕ.results.arithmetic.add_assoc
+                        ] at this
+                    conv at this => { rhs; rw [← @ℕ.results.arithmetic.zero_add r] }
+                    have := this
+                      |> ℕ.results.arithmetic.add_right_cancel
+                      |> ℕ.results.arithmetic.args_0_of_add_0
+                      |> And.left
+                      |> ℕ.results.arithmetic.args_0_of_add_0
+                      |> And.right
+                      |> ℕ.results.arithmetic.null_factor
+                    cases this <;> contradiction
+            intro q q' r r' h_qr h_q'r' h_r h_r'
+            -- Knowing that the quotients are also natural numbers, this descends to uniqueness on `ℕ`
+            have ⟨Q, h_Q⟩ : 0 ≤ q := quotient_nonneg q r (by assumption) (by assumption)
+            have ⟨Q', h_Q'⟩ : 0 ≤ q' := quotient_nonneg q' r' (by assumption) (by assumption)
+            rw [sub_zero] at h_Q
+            rw [sub_zero] at h_Q'
+            -- Show that we have the division in `ℕ` too (duh)
+            have h_Qr : x' = d' * Q + r := by
+              rw  [ h_x'
+                  , h_d'
+                  , h_Q
+                  , mul_mk
+                  , add_mk
+                  , ℕ.results.arithmetic.zero_mul
+                  , ℕ.results.arithmetic.add_zero
+                  , ℕ.results.arithmetic.mul_zero
+                  , ℕ.results.arithmetic.add_zero
+                  , ℕ.results.arithmetic.zero_add
+                  , ℕ.results.arithmetic.zero_mul
+                  ] at h_qr
+              have h_qr : x' + 0 = d' * Q + r + 0 := h_qr |> ℤ.exact
+              repeat rw [ℕ.results.arithmetic.add_zero] at h_qr
+              exact h_qr
+            have h_Q'r' : x' = d' * Q' + r' := by
+              rw  [ h_x'
+                  , h_d'
+                  , h_Q'
+                  , mul_mk
+                  , add_mk
+                  , ℕ.results.arithmetic.zero_mul
+                  , ℕ.results.arithmetic.add_zero
+                  , ℕ.results.arithmetic.mul_zero
+                  , ℕ.results.arithmetic.add_zero
+                  , ℕ.results.arithmetic.zero_add
+                  , ℕ.results.arithmetic.zero_mul
+                  ] at h_q'r'
+              have h_q'r' : x' + 0 = d' * Q' + r' + 0 := h_q'r' |> ℤ.exact
+              repeat rw [ℕ.results.arithmetic.add_zero] at h_q'r'
+              exact h_q'r'
+            have h_r : r < d' := by
+              conv at h_r => {
+                rw  [ h_d'
+                    , lt_mk
+                    , sub_eq_add_neg
+                    , neg_mk
+                    , add_mk
+                    , ℕ.results.arithmetic.add_zero
+                    , ℕ.results.arithmetic.zero_add
+                    ]
+              }
+              have ⟨δ, h_δ, h_δ_ne_0⟩ := h_r
+              exists δ
+              constructor
+              · have h_δ : d' = δ + r := h_δ |> ℤ.exact
+                rw [ℕ.results.arithmetic.add_comm]
+                assumption
+              · assumption
+            have h_r' : r' < d' := by
+              conv at h_r' => {
+                rw  [ h_d'
+                    , lt_mk
+                    , sub_eq_add_neg
+                    , neg_mk
+                    , add_mk
+                    , ℕ.results.arithmetic.add_zero
+                    , ℕ.results.arithmetic.zero_add
+                    ]
+              }
+              have ⟨δ, h_δ, h_δ_ne_0⟩ := h_r'
+              exists δ
+              constructor
+              · have h_δ : d' = δ + r' := h_δ |> ℤ.exact
+                rw [ℕ.results.arithmetic.add_comm]
+                assumption
+              · assumption
+            -- Apply the uniqueness from `ℕ`
+            have := h_uq Q Q' r r' ⟨h_Qr, h_Q'r', h_r, h_r'⟩
+            constructor
+            · rw [h_Q, h_Q', this.left]
+            · exact this.right
+
+    /--
+      This is fucking terrible code. The fact that it's almost 300 lines long is proof of that.
+
+      *So much* of it is repeated code. Going forward, I'll endeavour to cut down on this repeated code by making more general lemmas, even when I think "nah, it'll be okay to just copy this 'little' bit" -- it turns out that 'little bit's are actually rather long, and turn up over different case branches sometimes, which is the fkn worst...
+    -/
+    theorem euclidean_division
+      (d x : ℤ)
+      {h_d_pos : 0 < d}
+      : (∃ (q : ℤ) (r : ℕ),
+          x = d * q + r
+          ∧ r < d
+        ) ∧ (∀ (q q' : ℤ) (r r' : ℕ),
+          x = d * q + r → x = d * q' + r'
+          → r < d       → r' < d
+          → q = q' ∧ r = r'
+        )
+      := by
+        by_cases h : 0 ≤ x
+        case pos => -- `h : 0 ≤ x`
+          exact @euclidean_division_nonneg d x h h_d_pos
+        case neg =>
+          -- IDEA: `0 ≤ -x`, so bootstrap off the nonneg version for `-x`
+          have h_neg_x_nonneg : 0 ≤ -x := by
+            rw [←ge_iff_le, ←lt_iff_not_ge] at h
+            rw [le_iff_lt_or_eq]
+            apply Or.inl
+            rw [order.neg_iff_neg_pos] at h
+            assumption
+          have ⟨h_ex, h_uq⟩ := @euclidean_division_nonneg d (-x) h_neg_x_nonneg h_d_pos
+          constructor
+          case left => -- NOTE: **THE EXISTENCE CASE**
+            show ∃ q r, x = d * q + mk (r, 0) ∧ mk (r, 0) < d
+            have ⟨q, r, h_qr, h_r⟩ := h_ex
+            match r with
+            | 0 =>
+              exists (-q), 0
+              constructor
+              · rw [ntn_zero, add_zero, ←neg_mul_right]
+                rw [ntn_zero, add_zero, neg_eq_comm, Eq.comm] at h_qr
+                assumption
+              · assumption
+            | .succ r =>
+              rw [lt_mk] at h_d_pos
+              have ⟨d', h_d', h_d'_ne_0⟩ := h_d_pos
+              rw [sub_zero] at h_d'
+              rw  [ h_d'
+                  , lt_mk
+                  , sub_eq_add_neg
+                  , neg_mk
+                  , add_mk
+                  , ℕ.results.arithmetic.add_zero
+                  , ℕ.results.arithmetic.zero_add
+                  ] at h_r
+              have ⟨δ, h_δ, h_δ_ne_0⟩ := h_r
+              have h_δ : d' = δ + r.succ := h_δ |> ℤ.exact
+              exists (-(q + 1)), δ
+              constructor
+              case left =>
+                show x = d * (- (q + 1)) + mk (δ, 0)
+                apply neg_inj.mp
+                rw  [ neg_add'
+                    , neg_mul_right
+                    , neg_neg
+                    , neg_mk
+                    , mul_add
+                    , mul_one
+                    , add_assoc.symm
+                    , h_d'
+                    , add_mk
+                    , ℕ.results.arithmetic.add_zero
+                    , ℕ.results.arithmetic.zero_add
+                    , h_qr
+                    ]
+                suffices mk (r.succ, 0) = mk (d', δ) by rw [this, h_d']
+                apply ℤ.sound
+                show r.succ + δ = d'
+                rw [Eq.comm, ℕ.results.arithmetic.add_comm]
+                assumption
+              case right =>
+                rw  [ h_d'
+                    , lt_mk
+                    , sub_eq_add_neg
+                    , neg_mk
+                    , add_mk
+                    , ℕ.results.arithmetic.add_zero
+                    , ℕ.results.arithmetic.zero_add
+                    ]
+                exists r.succ
+                constructor
+                · apply ℤ.sound
+                  show d' = r.succ + δ
+                  rw [ℕ.results.arithmetic.add_comm]
+                  assumption
+                · intro h ; injection h
+          case right => -- NOTE: **THE UNIQUENESS CASE**
+            intro q q' r r' h_qr h_q'r' h_r h_r'
+            match r, r' with
+            | 0, 0 =>
+              rw [eq_self, and_true]
+              show q = q' -- Will appeal to unique factorisation of `-x`, as `d * (-q) + 0 = -x = d * (-q') + 0`
+              have h_div_neg_x : -x = d * (-q) + mk (0, 0) := by
+                rw [h_qr, ntn_zero, add_zero, add_zero, neg_mul_right]
+              have h_div_neg_x' : -x = d * (-q') + mk (0, 0) := by
+                rw [h_q'r', ntn_zero, add_zero, add_zero, neg_mul_right]
+              exact h_uq (-q) (-q') 0 0 h_div_neg_x h_div_neg_x' h_d_pos h_d_pos
+                |> And.left |> neg_inj.mp
+            | .succ r, 0 =>
+              -- show a contradiction through unique factorisation `d * (-(q + 1)) + (nonzero shit) = -x = d * (-q') + 0`
+              have h_d_pos' := h_d_pos -- backup for later. this is what copying code will do to someone...
+              rw [lt_mk] at h_d_pos
+              have ⟨d', h_d', h_d'_ne_0⟩ := h_d_pos
+              rw [sub_zero] at h_d'
+              rw  [ h_d'
+                  , lt_mk
+                  , sub_eq_add_neg
+                  , neg_mk
+                  , add_mk
+                  , ℕ.results.arithmetic.add_zero
+                  , ℕ.results.arithmetic.zero_add
+                  ] at h_r
+              have ⟨δ, h_δ, h_δ_ne_0⟩ := h_r
+              have h_δ : d' = δ + r.succ := h_δ |> ℤ.exact
+              have h_div_neg_x : -x = d * (-(q + 1)) + δ := by
+                rw  [ h_qr
+                    , neg_add'
+                    , neg_add'
+                    , mul_add
+                    , neg_mul_right
+                    , neg_mk
+                    , mul_neg_1
+                    ]
+                suffices mk (0, r.succ) = - d + mk (δ, 0) by
+                  rw [this, add_assoc]
+                rw [h_d', neg_mk, add_mk, ℕ.results.arithmetic.zero_add, ℕ.results.arithmetic.add_zero]
+                apply ℤ.sound
+                show 0 + d' = δ + r.succ
+                rw [ℕ.results.arithmetic.zero_add]
+                assumption
+              have h_div_neg_x' : -x = d * (-q') + mk (0, 0) := by
+                rw [h_q'r', ntn_zero, add_zero, add_zero, neg_mul_right]
+              have h_δ_lt_d : mk (δ, 0) < d := by
+                rw [h_d', lt_mk, sub_eq_add_neg, neg_mk, add_mk, ℕ.results.arithmetic.zero_add, ℕ.results.arithmetic.add_zero]
+                exists r.succ
+                constructor
+                · apply ℤ.sound
+                  show d' = r.succ + δ
+                  rw [ℕ.results.arithmetic.add_comm]
+                  assumption
+                · intro h; injection h
+              have : δ = 0 := h_uq (-(q + 1)) (-q') δ 0 h_div_neg_x h_div_neg_x' h_δ_lt_d h_d_pos' |> And.right
+              contradiction -- `δ = 0` and `δ ≠ 0`
+            | 0, .succ r' =>
+              -- show a contradiction by doing the same as the previous case *sigh*
+              have h_d_pos' := h_d_pos -- backup for later. this is what copying code will do to someone...
+              rw [lt_mk] at h_d_pos
+              have ⟨d', h_d', h_d'_ne_0⟩ := h_d_pos
+              rw [sub_zero] at h_d'
+              rw  [ h_d'
+                  , lt_mk
+                  , sub_eq_add_neg
+                  , neg_mk
+                  , add_mk
+                  , ℕ.results.arithmetic.add_zero
+                  , ℕ.results.arithmetic.zero_add
+                  ] at h_r'
+              have ⟨δ, h_δ, h_δ_ne_0⟩ := h_r'
+              have h_δ : d' = δ + r'.succ := h_δ |> ℤ.exact
+              have h_div_neg_x' : -x = d * (-(q' + 1)) + δ := by
+                rw  [ h_q'r'
+                    , neg_add'
+                    , neg_add'
+                    , mul_add
+                    , neg_mul_right
+                    , neg_mk
+                    , mul_neg_1
+                    ]
+                suffices mk (0, r'.succ) = - d + mk (δ, 0) by
+                  rw [this, add_assoc]
+                rw [h_d', neg_mk, add_mk, ℕ.results.arithmetic.zero_add, ℕ.results.arithmetic.add_zero]
+                apply ℤ.sound
+                show 0 + d' = δ + r'.succ
+                rw [ℕ.results.arithmetic.zero_add]
+                assumption
+              have h_div_neg_x : -x = d * (-q) + mk (0, 0) := by
+                rw [h_qr, ntn_zero, add_zero, add_zero, neg_mul_right]
+              have h_δ_lt_d : mk (δ, 0) < d := by
+                rw [h_d', lt_mk, sub_eq_add_neg, neg_mk, add_mk, ℕ.results.arithmetic.zero_add, ℕ.results.arithmetic.add_zero]
+                exists r'.succ
+                constructor
+                · apply ℤ.sound
+                  show d' = r'.succ + δ
+                  rw [ℕ.results.arithmetic.add_comm]
+                  assumption
+                · intro h; injection h
+              have : δ = 0 := h_uq (-(q' + 1)) (-q) δ 0 h_div_neg_x' h_div_neg_x h_δ_lt_d h_d_pos' |> And.right
+              contradiction -- `δ = 0` and `δ ≠ 0`
+            | .succ r, .succ r' =>
+              -- fuck I have to do the long thing twice
+              have h_d_pos' := h_d_pos -- backup for later. this is what copying code will do to someone...
+              rw [lt_mk] at h_d_pos
+              have ⟨d', h_d', h_d'_ne_0⟩ := h_d_pos
+              rw [sub_zero] at h_d'
+              rw  [ h_d'
+                  , lt_mk
+                  , sub_eq_add_neg
+                  , neg_mk
+                  , add_mk
+                  , ℕ.results.arithmetic.add_zero
+                  , ℕ.results.arithmetic.zero_add
+                  ] at h_r
+              have ⟨δ, h_δ, h_δ_ne_0⟩ := h_r
+              have h_δ : d' = δ + r.succ := h_δ |> ℤ.exact
+              have h_div_neg_x : -x = d * (-(q + 1)) + δ := by
+                rw  [ h_qr
+                    , neg_add'
+                    , neg_add'
+                    , mul_add
+                    , neg_mul_right
+                    , neg_mk
+                    , mul_neg_1
+                    ]
+                suffices mk (0, r.succ) = - d + mk (δ, 0) by
+                  rw [this, add_assoc]
+                rw [h_d', neg_mk, add_mk, ℕ.results.arithmetic.zero_add, ℕ.results.arithmetic.add_zero]
+                apply ℤ.sound
+                show 0 + d' = δ + r.succ
+                rw [ℕ.results.arithmetic.zero_add]
+                assumption
+              have h_δ_lt_d : mk (δ, 0) < d := by
+                rw [h_d', lt_mk, sub_eq_add_neg, neg_mk, add_mk, ℕ.results.arithmetic.zero_add, ℕ.results.arithmetic.add_zero]
+                exists r.succ
+                constructor
+                · apply ℤ.sound
+                  show d' = r.succ + δ
+                  rw [ℕ.results.arithmetic.add_comm]
+                  assumption
+                · intro h; injection h
+              -- **AFFHSIFHESFJEHSFKHESFHESFEFESFKESFESFESFESFESFESFES**
+              rw  [ h_d'
+                  , lt_mk
+                  , sub_eq_add_neg
+                  , neg_mk
+                  , add_mk
+                  , ℕ.results.arithmetic.add_zero
+                  , ℕ.results.arithmetic.zero_add
+                  ] at h_r'
+              have ⟨δ', h_δ', h_δ'_ne_0⟩ := h_r'
+              have h_δ' : d' = δ' + r'.succ := h_δ' |> ℤ.exact
+              have h_div_neg_x' : -x = d * (-(q' + 1)) + δ' := by
+                rw  [ h_q'r'
+                    , neg_add'
+                    , neg_add'
+                    , mul_add
+                    , neg_mul_right
+                    , neg_mk
+                    , mul_neg_1
+                    ]
+                suffices mk (0, r'.succ) = - d + mk (δ', 0) by
+                  rw [this, add_assoc]
+                rw [h_d', neg_mk, add_mk, ℕ.results.arithmetic.zero_add, ℕ.results.arithmetic.add_zero]
+                apply ℤ.sound
+                show 0 + d' = δ' + r'.succ
+                rw [ℕ.results.arithmetic.zero_add]
+                assumption
+              have h_δ'_lt_d : mk (δ', 0) < d := by
+                rw [h_d', lt_mk, sub_eq_add_neg, neg_mk, add_mk, ℕ.results.arithmetic.zero_add, ℕ.results.arithmetic.add_zero]
+                exists r'.succ
+                constructor
+                · apply ℤ.sound
+                  show d' = r'.succ + δ'
+                  rw [ℕ.results.arithmetic.add_comm]
+                  assumption
+                · intro h; injection h
+              have ⟨h_qq', h_δδ'⟩ := h_uq (-(q + 1)) (-(q' + 1)) δ δ' h_div_neg_x h_div_neg_x' h_δ_lt_d h_δ'_lt_d
+              constructor
+              · rw [neg_inj] at h_qq'
+                exact add_right_cancel h_qq'
+              · have : δ + r.succ = δ + r'.succ := calc δ + r.succ
+                  _ = d' := h_δ.symm
+                  _ = δ' + r'.succ := h_δ'
+                  _ = δ + r'.succ := by rw [←h_δδ']
+                exact ℕ.results.arithmetic.add_left_cancel this
+  end euc_div
 end ℤ
 
 end Numbers

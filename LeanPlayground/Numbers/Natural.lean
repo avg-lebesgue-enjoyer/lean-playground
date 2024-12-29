@@ -775,6 +775,162 @@ namespace ℕ
 
 
 
+  -- SECTION: I don't want to redo the euclidean division proof for `ℤ`...
+  namespace not_redoing_this
+    theorem euclidean_division
+      (x d : ℕ)
+      (h_d_ne_0 : d ≠ 0)
+      : (∃ (q r : ℕ),
+        x = d * q + r
+        ∧ r < d)
+      ∧ ∀ (q q' r r' : ℕ),
+        x = d * q + r ∧ x = d * q' + r'
+        ∧ r < d       ∧ r' < d
+        → q = q' ∧ r = r'
+      := by
+        revert x
+        apply induction.strong_induction
+        case h_0 => -- Base case
+          constructor
+          case left =>
+            show ∃ q r, 0 = d * q + r ∧ r < d
+            exists 0 ; exists 0
+            constructor
+            · rfl
+            · match d with | 0 => contradiction | succ d => {
+                rw [order.lt_succ_iff_le]
+                exact le.zero_initial
+              }
+          case right =>
+            show ∀ (q q' r r' : ℕ), 0 = d * q + r ∧ 0 = d * q' + r' ∧ r < d ∧ r' < d → q = q' ∧ r = r'
+            -- Will show that `q = q' = r = r' = 0`.
+            have lemma : ∀ (q r : ℕ), 0 = d * q + r → q = 0 ∧ r = 0 := by
+              intro q r h_qr
+              have ⟨h_q, h_r_eq_0⟩ := add.thm_args_0_of_add_0 h_qr.symm
+              rw [← mul.lem_mul_0 d] at h_q
+              have h_q_eq_0 := mul.thm_left_cancel d q 0 h_d_ne_0 h_q
+              constructor <;> assumption
+            -- Straightforward application of the lemma
+            intro q q' r r' ⟨h_qr, h_q'r', _, _⟩
+            have ⟨h_q_eq_0, h_r_eq_0⟩ := lemma q r h_qr
+            have ⟨h_q'_eq_0, h_r'_eq_0⟩ := lemma q' r' h_q'r'
+            rw [h_q_eq_0, h_r_eq_0, h_q'_eq_0, h_r'_eq_0]
+            constructor <;> rfl
+        case sih =>
+          intro x ih
+          have h := lt.trichotomy x d
+          have h : x < d ∨ d ≤ x := by
+            rw [@or_comm (x = d) (x > d), gt_iff_lt, Eq.comm, ← order.le_iff_lt_v_eq] at h
+            assumption
+          cases h
+          case inl h => -- Case where `x < d`; base case
+            apply And.intro
+            case left =>
+              show ∃ q r, x = d * q + r ∧ r < d
+              exists 0 ; exists x
+              constructor
+              · rw [mul.lem_mul_0, add.lem_0_add]
+              · exact h
+            case right =>
+              -- Will show `q = q' = 0` and `r = r' = x`
+              have lemma : ∀ (q r : ℕ), x = d * q + r → q = 0 ∧ r = x := by
+                intro q r h_qr
+                have h_q_eq_0 : q = 0 := by
+                  rw [h_qr] at h
+                  match q with | 0 => rfl | succ q => {
+                    -- show a contradiction
+                    rw [mul.lem_mul_succ, add.thm_comm _ d] at h
+                    have ⟨δ, h_δ, h_δ_ne_0⟩ := h
+                    -- Our contradiction will be `: δ = 0`, contradicting `h_δ_ne_0 : δ ≠ 0`
+                    conv at h_δ => { lhs; rw [← add.lem_add_0 d] }
+                    rw [← add.thm_assoc, ← add.thm_assoc] at h_δ
+                    have h_δ := add.thm_left_cancel _ _ _ h_δ
+                    rw [add.thm_assoc] at h_δ
+                    have : δ = 0 := add.thm_args_0_of_add_0 h_δ.symm |> And.right
+                    contradiction
+                  }
+                apply And.intro
+                case left => show q = 0 ; assumption
+                case right =>
+                  show r = x
+                  rw [h_q_eq_0, mul.lem_mul_0, add.lem_0_add] at h_qr
+                  apply Eq.symm ; assumption
+              intro q q' r r' ⟨h_qr, h_q'r', _, _⟩
+              have ⟨h_q_eq_0, h_r_eq_x⟩ := lemma q r h_qr
+              have ⟨h_q'_eq_0, h_r'_eq_x⟩ := lemma q' r' h_q'r'
+              rw [h_q_eq_0, h_r_eq_x, h_q'_eq_0, h_r'_eq_x]
+              constructor <;> rfl
+          case inr h => -- Case where `d ≤ x`; recursive case
+            have ⟨δ, h_δ⟩ := h
+            apply And.intro
+            case left =>
+              show ∃ q r, x = d * q + r ∧ r < d
+              -- Get candidate `q` and `r` by bootstrapping off those for `δ`
+              have : δ ≤ x := by
+                exists d
+                rw [add.thm_comm]
+                assumption
+              have : δ < x := by
+                have : δ < x ∨ δ = x := order.le_iff_lt_v_eq.mp this
+                cases this
+                case inl => assumption
+                case inr this =>
+                  -- show a contradiction
+                  rw [this] at h_δ
+                  conv at h_δ => { lhs ; rw [← add.lem_0_add x] }
+                  have h_δ := add.thm_right_cancel x _ _ h_δ |> Eq.symm
+                  contradiction
+              have ⟨ih_ex, ih_uq⟩ := ih δ this
+              have ⟨q, r, h_δ_qr, h_r_lt_d⟩ := ih_ex
+              exists q + 1 ; exists r
+              show x = d * (q + 1) + r ∧ r < d
+              rw [h_δ]
+              constructor ; (case right => assumption) ; case left =>
+                rw [h_δ_qr, add.thm_assoc, add.thm_comm d, ←mul.lem_mul_succ, add.lem_succ_eq_add_1]
+            case right =>
+              intro q q' r r' ⟨h_qr, h_q'r', h_r_lt_d, h_r'_lt_d⟩
+              -- Rule out `q = 0`
+              match q with
+              | 0 =>
+                -- show a contradiction
+                rw [mul.lem_mul_0, add.lem_0_add] at h_qr
+                rw [h_qr] at h -- `h : d ≤ r` should now contradict `h_r_lt_d : r < d`
+                have : d < d := calc d
+                  ℕ.le _ r := h
+                  ℕ.lt _ d := h_r_lt_d
+                have : ¬ (d < d) := lt.irrefl
+                contradiction
+              | succ q =>
+                -- Rule out `q' = 0`
+                match q' with
+                | 0 =>
+                  -- show a contradiction; same proof as last time
+                  rw [mul.lem_mul_0, add.lem_0_add] at h_q'r'
+                  rw [h_q'r'] at h
+                  have : d < d := calc d
+                    ℕ.le _ r' := h
+                    ℕ.lt _ d := h_r'_lt_d
+                  have : ¬ (d < d) := lt.irrefl
+                  contradiction
+                | succ q' =>
+                  -- Know `q ≠ 0` and `q' ≠ 0`
+                  rw [h_δ, mul.lem_mul_succ, add.thm_comm _ d, ← add.thm_assoc] at h_qr
+                  have h_qr := add.thm_left_cancel d _ _ h_qr
+                  rw [h_δ, mul.lem_mul_succ, add.thm_comm _ d, ← add.thm_assoc] at h_q'r'
+                  have h_q'r' := add.thm_left_cancel d _ _ h_q'r'
+                  have h_δ_lt_x : δ < x := by
+                    exists d
+                    constructor
+                    · rw [add.thm_comm] ; assumption
+                    · assumption
+                  have ih := (ih δ h_δ_lt_x).right q q' r r'
+                  have ⟨h_q_eq_q', h_r_eq_r'⟩ := ih ⟨(by assumption), (by assumption), (by assumption), (by assumption)⟩ -- lmao
+                  rw [h_q_eq_q', h_r_eq_r']
+                  constructor <;> rfl
+  end not_redoing_this
+
+
+
   -- SECTION: Fundamental Theorem of Arithmetic
   namespace tomb -- I want to develop the theory of "the integers modulo a prime" first, just so that proving `p ∣ a * b → p ∣ a ∨ p ∣ b` isn't a huge pain in the ass. That necessitates reasoning about the integers first. The fundamental theorem of arithmetic will get its own separate file eventually.
   namespace fund_arithmetic
