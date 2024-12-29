@@ -36,6 +36,12 @@ namespace Numbers.ℤ.results
    -/
   theorem ℤ.indOn {β : ℤ → Prop} (z : ℤ) (mk : ∀ (p : ℕ × ℕ), β (ℤ.mk p)) : β z := Numbers.ℤ.indOn z mk
 
+  /-- Existence form of `ℤ.indOn`. -/
+  theorem ℤ.existsRep (z : ℤ) : ∃ (a b : ℕ), z = ℤ.mk (a, b) := Numbers.ℤ.existsRep z
+
+  /-- "Nonnegative or nonpositive" representatives in `ℤ`. -/
+  theorem ℤ.existsCanonRep (z : ℤ) : ∃ (n : ℕ), z = ℤ.mk (n, 0) ∨ z = ℤ.mk (0, n) := Numbers.ℤ.existsCanonRep z
+
 
   -- SECTION: Notation
   /-- The canonical quotient map for `ℤ := ℕ × ℕ ⧸ same_difference`. -/
@@ -118,6 +124,10 @@ namespace Numbers.ℤ.results
     theorem mul_neg_1 {x : ℤ} : x * (-1) = -x := arith.mul_neg_1
     theorem neg_1_mul {x : ℤ} : (-1) * x = -x := arith.neg_1_mul
 
+    theorem eq_iff_sub_eq_zero {x y : ℤ} : x - y = 0 ↔ x = y := arith.eq_iff_sub_eq_zero
+
+    theorem neg_eq_comm {x y : ℤ} : -x = y ↔ -y = x := arith.neg_eq_comm
+
     -- More results will come to mind as they prove useful
   end ring
 
@@ -140,6 +150,7 @@ namespace Numbers.ℤ.results
     /-- Defining property of `ℤ.lt`. -/
     theorem lt_iff_le_and_ne {x y : ℤ} : x < y ↔ x ≤ y ∧ x ≠ y := order.lt_iff_le_and_ne
     theorem le_iff_lt_or_eq {x y : ℤ} : x ≤ y ↔ x < y ∨ x = y := order.le_iff_lt_or_eq
+    theorem lt_iff_not_ge {x y : ℤ} : x < y ↔ ¬ (x ≥ y) := order.lt_iff_not_ge
 
     theorem le_or_eq_iff_le {x y : ℤ} : x ≤ y ∨ x = y ↔ x ≤ y := order.le_or_eq_iff_le
 
@@ -149,6 +160,14 @@ namespace Numbers.ℤ.results
 
     /-- Not actually the defining relationship for `ℤ.lt`. -/
     theorem lt_mk {x y : ℤ} : x < y ↔ ∃ (a : ℕ), y - x = ℤ.mk (a, 0) ∧ a ≠ 0 := order.lt_mk
+
+    /-- The trichotomous (total order) property of `ℤ.lt`. -/
+    theorem lt_trichotomy (x y : ℤ) : x < y ∨ x = y ∨ y < x := order.lt_trichotomy x y
+
+    theorem sub_le {x y z : ℤ} : x - y ≤ z ↔ x ≤ z + y := order.sub_le
+    theorem le_sub {x y z : ℤ} : x ≤ y - z ↔ x + z ≤ y := order.le_sub
+    theorem sub_lt {x y z : ℤ} : x - y < z ↔ x < z + y := order.sub_lt
+    theorem lt_sub {x y z : ℤ} : x < y - z ↔ x + z < y := order.lt_sub
   end ordered_ring
 
 

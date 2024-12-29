@@ -90,6 +90,41 @@ theorem ℤ.ind {β : ℤ → Prop} (mk : ∀ (p : ℕ × ℕ), β (ℤ.mk p)) :
   apply mk
 /-- "Pattern-matching" the provided argument as `ℤ.mk (something : ℕ × ℕ)` *in a proof*. See also `ℤ.ind`. -/
 theorem ℤ.indOn {β : ℤ → Prop} (z : ℤ) (mk : ∀ (p : ℕ × ℕ), β (ℤ.mk p)) : β z := ℤ.ind mk z
+/-- Existence form of `ℤ.indOn`. -/
+theorem ℤ.existsRep (z : ℤ) : ∃ (a b : ℕ), z = ℤ.mk (a, b) := by
+  apply z.indOn ; intro (a, b)
+  exists a ; exists b
+/-- "Nonnegative or nonpositive" representatives in `ℤ`. -/
+theorem ℤ.existsCanonRep (z : ℤ) : ∃ (n : ℕ), z = ℤ.mk (n, 0) ∨ z = ℤ.mk (0, n) := by
+  have ⟨a, b, h_ab⟩ := ℤ.existsRep z
+  rw [h_ab]
+  have h := ℕ.results.order.trichotomy a b
+  cases h
+  case inl h =>
+    have ⟨δ, h_δ, h_δ_ne_0⟩ := h
+    exists δ
+    apply Or.inr
+    apply ℤ.sound
+    show a + δ = 0 + b
+    rw [ℕ.results.arithmetic.zero_add, Eq.comm]
+    assumption
+  case inr h =>
+    cases h
+    case inl h =>
+      exists 0
+      apply Or.inl
+      apply ℤ.sound
+      show a + 0 = 0 + b
+      rw [ℕ.results.arithmetic.add_zero, ℕ.results.arithmetic.zero_add]
+      assumption
+    case inr h =>
+      have ⟨δ, h_δ, _⟩ := h
+      exists δ
+      apply Or.inl
+      apply ℤ.sound
+      show a + 0 = δ + b
+      rw [ℕ.results.arithmetic.add_zero, ℕ.results.arithmetic.add_comm]
+      assumption
 /--
   Lift a non-dependent single-argument function `ℕ × ℕ → β` which respects the quotienting relation
   `same_difference` to a map `ℤ → β`.
@@ -597,6 +632,10 @@ namespace ℤ
         _ = x - y + y     := by rw [←sub_eq_add_neg]
         _ = 0 + y         := by rw [h]
         _ = y             := zero_add
+    theorem eq_iff_sub_eq_zero {x y : ℤ} : x - y = 0 ↔ x = y := by
+      constructor
+      case mp  => exact eq_of_sub_eq_zero
+      case mpr => intro h ; rw [h, sub_self]
 
     theorem add_sub_assoc {x y z : ℤ} : x + (y - z) = x + y - z := calc x + (y - z)
       _ = x + (y + -z)  := by rw [sub_eq_add_neg]
@@ -605,6 +644,20 @@ namespace ℤ
 
     theorem sub_add {x y z : ℤ} : x - (y + z) = x - y - z := by
       rw [sub_eq_add_neg, neg_add', add_assoc, sub_eq_add_neg, sub_eq_add_neg]
+
+    theorem neg_eq_comm {x y : ℤ} : -x = y ↔ -y = x := by
+      have lemma : ∀ (a b : ℤ), -a = b → -b = a := by
+        intro a b
+        apply a.indOn ; intro (p, q)
+        apply b.indOn ; intro (x, y)
+        rw [neg_mk, neg_mk]
+        intro h
+        have h : q + y = x + p := ℤ.exact h
+        apply ℤ.sound
+        show y + q = p + x
+        rw [ℕ.results.arithmetic.add_comm y, ℕ.results.arithmetic.add_comm p]
+        exact h
+      constructor <;> apply lemma
   end arith
 
 
@@ -781,10 +834,130 @@ namespace ℤ
           show ∃ b, y - x = ℤ.mk (b, 0)
           exists a
 
-    theorem lt_trichotomy (x y : ℤ) : x < y ∨ x = y ∨ x > y := by
-      apply x.indOn ; intro (a, b)
-      apply y.indOn ; intro (x, y)
+    theorem sub_le {x y z : ℤ} : x - y ≤ z ↔ x ≤ z + y := by
+      show (∃ a, z - (x - y) = mk (a, 0)) ↔ (∃ a, z + y - x = mk (a, 0))
+      conv => {
+        lhs; arg 1; intro a
+        rw  [ sub_eq_add_neg
+            , sub_eq_add_neg
+            , neg_add'
+            , neg_neg
+            , add_comm (-x)
+            , add_assoc
+            , ← sub_eq_add_neg]
+      }
+      -- closed by `rfl`
+    theorem le_sub {x y z : ℤ} : x ≤ y - z ↔ x + z ≤ y := by
+      show (∃ a, y - z - x = mk (a, 0)) ↔ (∃ a, y - (x + z) = mk (a, 0))
+      conv => {
+        rhs; arg 1; intro a; lhs
+        rw [sub_eq_add_neg, neg_add', add_comm (-x), add_assoc, ←sub_eq_add_neg, ←sub_eq_add_neg]
+      }
+      -- closed by `rfl`
+    theorem sub_lt {x y z : ℤ} : x - y < z ↔ x < z + y := by
+      rw [lt_mk, lt_mk]
+      show (∃ a, z - (x - y) = mk (a, 0) ∧ a ≠ 0) ↔ (∃ a, z + y - x = mk (a, 0) ∧ a ≠ 0)
+      -- Same proof as `sub_le` from here onwards
+      conv => {
+        lhs; arg 1; intro a
+        rw  [ sub_eq_add_neg
+            , sub_eq_add_neg
+            , neg_add'
+            , neg_neg
+            , add_comm (-x)
+            , add_assoc
+            , ← sub_eq_add_neg]
+      }
+    theorem lt_sub {x y z : ℤ} : x < y - z ↔ x + z < y := by
+      rw [lt_mk, lt_mk]
+      show (∃ a, y - z - x = mk (a, 0) ∧ a ≠ 0) ↔ (∃ a, y - (x + z) = mk (a, 0) ∧ a ≠ 0)
+      -- same proof as `le_sub` now
+      conv => {
+        rhs; arg 1; intro a; lhs
+        rw [sub_eq_add_neg, neg_add', add_comm (-x), add_assoc, ←sub_eq_add_neg, ←sub_eq_add_neg]
+      }
+      -- closed by `rfl`
 
+    theorem lt_iff_not_ge {x y : ℤ} : x < y ↔ ¬ (x ≥ y) := by
+      constructor
+      case mp =>
+        rw [lt_mk]
+        intro ⟨a, h_a, h_a_ne_0⟩
+        intro ⟨b, h_b⟩
+        rw [sub_eq_add_neg, add_comm, ←@neg_neg x, ←neg_add', ←sub_eq_add_neg] at h_b
+        rw [h_a, neg_mk] at h_b
+        have : 0 + 0 = b + a := ℤ.exact h_b
+        rw [ℕ.results.arithmetic.add_zero, Eq.comm] at this
+        have := ℕ.results.arithmetic.args_0_of_add_0 this |> And.right
+        contradiction -- `a ≠ 0` and `a = 0`
+      case mpr =>
+        apply x.indOn ; intro (a, b)
+        apply y.indOn ; intro (x, y)
+        intro h
+        rw [lt_mk]
+        conv at h => {
+          arg 1; rw [ge_iff_le, le_mk]
+        }
+        conv => {
+          arg 1 ; intro n
+          rw [sub_eq_add_neg, add_comm, ←@neg_neg (mk (x, y)), ←neg_add', ←sub_eq_add_neg]
+          rw [neg_eq_comm, neg_mk, Eq.comm]
+        }
+        have h : ∀ n, mk (a, b) - mk (x, y) ≠ mk (n, 0) := by
+          rw [not_exists] at h
+          exact h
+        have ⟨n, h_n⟩ := (mk (a, b) - mk (x, y)).existsCanonRep
+        cases h_n
+        case inl h_n =>
+          suffices False by contradiction
+          show False
+          exact h n h_n
+        case inr h_n =>
+          exists n
+          rw [h_n]
+          constructor
+          · rfl
+          · intro h_n_eq_0
+            show False
+            rw [h_n_eq_0] at h_n
+            exact h 0 h_n
+
+    -- Uses `Classical` logic
+    theorem lt_trichotomy (x y : ℤ) : x < y ∨ x = y ∨ y < x := by
+      have lemma : ∀ (x : ℤ), 0 < x ∨ 0 = x ∨ x < 0 := by
+        intro x ; apply x.indOn ; intro (x, y)
+        by_cases h : 0 ≤ mk (x, y)
+        case pos => -- `h : 0 ≤ mk (x, y)`
+          rw [le_mk] at h
+          have ⟨a, h_a⟩ := h
+          rw [sub_zero] at h_a
+          match a with
+          | 0 =>
+            rw [ntn_zero] at h_a
+            exact h_a.symm |> Or.inl |> Or.inr
+          | .succ a =>
+            apply Or.inl
+            rw [←ntn_zero, lt_mk, ntn_zero, sub_zero]
+            show ∃ a, mk (x, y) = mk (a, 0) ∧ a ≠ 0
+            exists a.succ
+            constructor
+            case h.right =>
+              intro h ; injection h
+            case h.left =>
+              apply ℤ.sound
+              show x + 0 = a.succ + y
+              exact ℤ.exact h_a
+        case neg => -- `h : ¬ (0 ≤ mk (x, y))`
+          apply Or.inr ; apply Or.inr
+          show mk (x, y) < 0
+          rw [lt_iff_not_ge]
+          exact h
+      -- Straightforward application of the `lemma`
+      have := lemma <| y - x
+      rw [lt_sub, zero_add] at this
+      rw [Eq.comm, eq_iff_sub_eq_zero, Eq.comm] at this
+      rw [sub_lt, zero_add] at this
+      assumption
   end order
 
 
@@ -800,9 +973,10 @@ namespace ℤ
     theorem divides_refl (x : ℤ) : x ∣ x := by
       exists 1
       rw [mul_one]
-    -- theorem divides_symm {x y : ℤ} : x ∣ y → y ∣ x → x = y ∨ x = -y := by
-    --   -- intro ⟨q, h_q⟩ ⟨r, h_r⟩
-    --   -- rw [h_q] at h_r
+    theorem divides_symm {x y : ℤ} : x ∣ y → y ∣ x → x = y ∨ x = -y := by
+      intro ⟨q, h_q⟩ ⟨r, h_r⟩
+      rw [h_q] at h_r
+      admit
   end divisibility
 
   -- def prime (p : ℤ) : Prop := p > 1 ∧ ∀ (d : ℤ)
