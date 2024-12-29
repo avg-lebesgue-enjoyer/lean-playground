@@ -146,6 +146,9 @@ namespace Numbers.ℤ.results
     theorem lt_irrefl (x : ℤ) : ¬ (x < x) := order.lt_irrefl x
     theorem lt_asymm {x y : ℤ} : x < y → ¬ (y < x) := order.lt_asymm
     theorem lt_trans {x y z : ℤ} : x < y → y < z → x < z := order.lt_trans
+
+    /-- Not actually the defining relationship for `ℤ.lt`. -/
+    theorem lt_mk {x y : ℤ} : x < y ↔ ∃ (a : ℕ), y - x = ℤ.mk (a, 0) ∧ a ≠ 0 := order.lt_mk
   end ordered_ring
 
 

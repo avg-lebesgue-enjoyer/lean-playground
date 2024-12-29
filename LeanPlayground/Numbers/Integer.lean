@@ -752,7 +752,60 @@ namespace ℤ
         intro h
         rw [h] at h_xy
         exact lt_asymm h_xy h_yz
+
+    /-- Not actually the defining relationship. -/
+    theorem lt_mk {x y : ℤ} : x < y ↔ ∃ (a : ℕ), y - x = ℤ.mk (a, 0) ∧ a ≠ 0 := by
+      rw [lt_iff_le_and_ne]
+      constructor
+      case mp =>
+        intro ⟨⟨a, h_a⟩, h_x_ne_y⟩
+        exists a
+        constructor
+        case left => assumption
+        case right =>
+          intro h_a_eq_0
+          rw [h_a_eq_0, ntn_zero] at h_a
+          have := eq_of_sub_eq_zero h_a |> Eq.symm
+          contradiction -- `x ≠ y` and `x = y`
+      case mpr =>
+        intro ⟨a, h_a, h_a_ne_0⟩
+        constructor
+        case right =>
+          intro h_x_eq_y
+          show False
+          rw [h_x_eq_y, sub_self, ← ntn_zero] at h_a
+          have silver_bullet : 0 + 0 = a + 0 := ℤ.exact h_a
+          rw [ℕ.results.arithmetic.add_zero, ℕ.results.arithmetic.add_zero, Eq.comm] at silver_bullet
+          contradiction -- `a ≠ 0` and `a = 0`
+        case left =>
+          show ∃ b, y - x = ℤ.mk (b, 0)
+          exists a
+
+    theorem lt_trichotomy (x y : ℤ) : x < y ∨ x = y ∨ x > y := by
+      apply x.indOn ; intro (a, b)
+      apply y.indOn ; intro (x, y)
+
   end order
+
+
+
+  /- SECTION: Divisibility -/
+  /-- The divisibility relation on `ℤ`. -/
+  def divides (d x : ℤ) : Prop := ∃ (q : ℤ), x = d * q
+  @[inherit_doc] infix:50 " ∣ " => divides
+
+  namespace divisibility
+    open arith
+
+    theorem divides_refl (x : ℤ) : x ∣ x := by
+      exists 1
+      rw [mul_one]
+    -- theorem divides_symm {x y : ℤ} : x ∣ y → y ∣ x → x = y ∨ x = -y := by
+    --   -- intro ⟨q, h_q⟩ ⟨r, h_r⟩
+    --   -- rw [h_q] at h_r
+  end divisibility
+
+  -- def prime (p : ℤ) : Prop := p > 1 ∧ ∀ (d : ℤ)
 end ℤ
 
 end Numbers
