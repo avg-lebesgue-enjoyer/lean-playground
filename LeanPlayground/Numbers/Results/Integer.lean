@@ -242,6 +242,10 @@ namespace Numbers.ℤ.results
     theorem le_sub {x y z : ℤ} : x ≤ y - z ↔ x + z ≤ y := order.le_sub
     theorem sub_lt {x y z : ℤ} : x - y < z ↔ x < z + y := order.sub_lt
     theorem lt_sub {x y z : ℤ} : x < y - z ↔ x + z < y := order.lt_sub
+
+    theorem lt_iff_le_sub_one {x y : ℤ} : x < y ↔ x ≤ y - 1 := order.lt_iff_le_sub_one
+    theorem nonneg_of_mul_nonneg {x y : ℤ} : 0 ≤ x → 0 ≤ y → 0 ≤ x * y := order.nonneg_of_mul_nonneg
+    theorem le_iff_sub_nonneg {x y : ℤ} : x ≤ y ↔ 0 ≤ y - x := order.le_iff_sub_nonneg
   end ordered_ring
 
 
@@ -251,6 +255,7 @@ namespace Numbers.ℤ.results
     theorem divides_refl (x : ℤ) : x ∣ x := divisibility.divides_refl x
     theorem divides_antisymm {x y : ℤ} : x ∣ y → y ∣ x → x = y ∨ x = -y := divisibility.divides_antisymm
     theorem divides_trans {x y z : ℤ} : x ∣ y → y ∣ z → x ∣ z := divisibility.divides_trans
+    theorem le_of_divides {d x : ℤ} : x > 0 → d ∣ x → d ≤ x := divisibility.le_of_divides
   end number_theory -- thank heavens
 
 

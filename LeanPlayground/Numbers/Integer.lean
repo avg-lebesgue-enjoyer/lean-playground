@@ -1119,6 +1119,139 @@ namespace ℤ
       rw [Eq.comm, eq_iff_sub_eq_zero, Eq.comm] at this
       rw [sub_lt, zero_add] at this
       assumption
+
+    theorem lt_weird
+      {x y : ℤ}
+      : 0 < x * y
+      → 0 < x
+      → 0 < y
+      := by
+        have ⟨a, h_a⟩ := x.existsCanonRep
+        have ⟨b, h_b⟩ := y.existsCanonRep
+        intro h_xy h_x
+        cases h_a
+        case inl h_a =>
+          cases h_b
+          case inl h_b =>
+            rw [h_b, lt_mk, sub_zero]
+            exists b
+            constructor ; (case left => rfl) ; case right =>
+            show b ≠ 0
+            intro h_b_eq_0
+            rw [h_b_eq_0, ntn_zero] at h_b
+            rw [h_b, mul_zero] at h_xy
+            have := lt_irrefl 0
+            contradiction -- `0 < 0`
+          case inr h_b =>
+            -- show a contradiction
+            rw  [ h_a
+                , h_b
+                , mul_mk
+                , ℕ.results.arithmetic.mul_zero
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.add_zero
+                , ℕ.results.arithmetic.add_zero
+                , lt_mk
+                ] at h_xy
+            have ⟨c, h_c, h_c_ne_0⟩ := h_xy
+            rw [sub_zero] at h_c
+            have h_c : 0 + 0 = c + a * b := h_c |> ℤ.exact
+            rw [ℕ.results.arithmetic.add_zero] at h_c
+            have h_c := h_c.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+            contradiction -- `c = 0` and `c ≠ 0`
+        case inr h_a =>
+          cases h_b
+          case inl h_b =>
+            -- show a contradiciton; same proof as the previous case, modulo something being on the left instead of the right
+            rw  [ h_a
+                , h_b
+                , mul_mk
+                , ℕ.results.arithmetic.mul_zero
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.add_zero
+                , ℕ.results.arithmetic.zero_add
+                , lt_mk
+                ] at h_xy
+            have ⟨c, h_c, h_c_ne_0⟩ := h_xy
+            rw [sub_zero] at h_c
+            have h_c : 0 + 0 = c + a * b := h_c |> ℤ.exact
+            rw [ℕ.results.arithmetic.add_zero] at h_c
+            have h_c := h_c.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+            contradiction -- `c = 0` and `c ≠ 0`
+          case inr h_b =>
+            -- show a contradiction
+            rw [h_a, lt_mk, sub_zero] at h_x
+            have ⟨c, h_c, h_c_ne_0⟩ := h_x
+            have h_c : 0 + 0 = c + a := h_c |> ℤ.exact
+            rw [ℕ.results.arithmetic.add_zero] at h_c
+            have h_c := h_c.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+            contradiction -- `c = 0` and `c ≠ 0`
+
+    theorem lt_iff_le_sub_one {x y : ℤ} : x < y ↔ x ≤ y - 1 := by
+      constructor
+      case mp =>
+        rw [lt_mk]
+        intro ⟨a, h_a, h_a_ne_0⟩
+        match a with
+        | 0 => contradiction -- `0 ≠ 0`
+        | .succ a =>
+        rw [le_mk]
+        exists a
+        rw  [ sub_eq_add_neg
+            , sub_eq_add_neg
+            , add_right_comm
+            , ←@sub_eq_add_neg y
+            , h_a
+            , ←ntn_one
+            , neg_mk
+            , add_mk
+            , ℕ.results.arithmetic.add_zero
+            , ℕ.results.arithmetic.zero_add]
+        apply ℤ.sound
+        show a.succ + 0 = a + 1
+        rfl
+      case mpr =>
+        intro ⟨a, h_a⟩
+        rw [lt_mk]
+        rw  [ sub_eq_add_neg
+            , sub_eq_add_neg
+            , add_right_comm
+            , ←sub_eq_add_neg
+            , ←sub_eq_add_neg
+            ] at h_a
+        have : y - x = mk (a + 1, 0) := calc y - x
+          _ = y - x + (-1 + 1)      := by conv => { rhs; rw [neg_add, add_zero] }
+          _ = y - x + -1 + 1        := by rw [add_assoc]
+          _ = y - x - 1 + 1         := by rw [←sub_eq_add_neg]
+          _ = mk (a, 0) + 1         := by rw [h_a]
+          _ = mk (a, 0) + mk (1, 0) := by rw [←ntn_one]
+          _ = mk (a + 1, 0)         := by rw [add_mk, ℕ.results.arithmetic.zero_add]
+        exists a + 1
+        constructor
+        · assumption
+        · intro h
+          rw [←ℕ.results.ntn.succ_zero_eq_1, ℕ.results.arithmetic.add_succ] at h
+          injection h
+
+    theorem nonneg_of_mul_nonneg {x y : ℤ} : 0 ≤ x → 0 ≤ y → 0 ≤ x * y := by
+      intro ⟨a, h_a⟩ ⟨b, h_b⟩
+      rw [sub_zero] at h_a
+      rw [sub_zero] at h_b
+      rw  [ h_a
+          , h_b
+          , mul_mk
+          , ℕ.results.arithmetic.mul_zero
+          , ℕ.results.arithmetic.add_zero
+          , ℕ.results.arithmetic.mul_zero
+          , ℕ.results.arithmetic.zero_add
+          , ℕ.results.arithmetic.zero_mul
+          ]
+      exists a * b
+
+    theorem le_iff_sub_nonneg {x y : ℤ} : x ≤ y ↔ 0 ≤ y - x := by
+      rw [le_mk, le_mk, sub_zero]
   end order
 
 
@@ -1365,6 +1498,7 @@ namespace ℤ
     theorem divides_refl (x : ℤ) : x ∣ x := by
       exists 1
       rw [mul_one]
+    -- This took so much work T-T -- the entire previous section on units was just so that I could prove this...
     theorem divides_antisymm {x y : ℤ} : x ∣ y → y ∣ x → x = y ∨ x = -y := by
       intro ⟨d, h_d⟩ ⟨e, h_e⟩
       rw [h_d] at h_e
@@ -1391,6 +1525,38 @@ namespace ℤ
       intro ⟨d, h_d⟩ ⟨e, h_e⟩
       rw [h_d, ←mul_assoc] at h_e
       exists d * e
+
+    theorem le_of_divides
+      {d x : ℤ}
+      : x > 0
+      → d ∣ x
+      → d ≤ x
+      := by
+        intro ⟨h_0_le_x, h_0_ne_x⟩ ⟨e, h_e⟩
+        by_cases h : d ≤ 0
+        case pos => -- `h : d ≤ 0`
+          apply le_trans
+          · exact h
+          · exact h_0_le_x
+        case neg => -- `h : ¬ (d ≤ 0)`
+          rw [←ge_iff_le] at h
+          have h_0_lt_d : 0 < d := lt_iff_not_ge.mpr h
+          have : x - d = d * (e - 1) := calc x - d
+            _ = d * e - d     := by rw [h_e]
+            _ = d * e - d * 1 := by rw [@mul_one d]
+            _ = d * (e - 1)   := by rw [mul_sub]
+          have h_0_lt_x : 0 < x := by
+            rw [lt_iff_le_and_ne]
+            constructor <;> assumption
+          have h_0_lt_e := lt_weird (h_e ▸ h_0_lt_x) h_0_lt_d
+          have h_0_le_e_sub_1 := h_0_lt_e |> lt_iff_le_sub_one.mp
+          have h_0_le_d := h_0_lt_d |> Or.inl |> le_iff_lt_or_eq.mpr
+          have : 0 ≤ x - d := by
+            rw [this]
+            apply nonneg_of_mul_nonneg <;> assumption
+          apply le_iff_sub_nonneg.mpr
+          assumption
+    #check ℤ.order.lt_iff_not_ge
   end divisibility
 
   -- def prime (p : ℤ) : Prop := p > 1 ∧ ∀ (d : ℤ)
