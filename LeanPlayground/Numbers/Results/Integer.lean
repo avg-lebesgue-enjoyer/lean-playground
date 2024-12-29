@@ -135,6 +135,8 @@ namespace Numbers.ℤ.results
     theorem le_add_hom {a b x y : ℤ} : a ≤ b → x ≤ y → a + x ≤ b + y := order.le_add_hom
     theorem le_neg_antihom {x y : ℤ} : x ≤ y → -y ≤ -x := order.le_neg_antihom
 
+    theorem le_of_nat {x : ℕ} : (0 : ℤ) ≤ (x : ℤ) := order.le_of_nat
+
     /-- Defining property of `ℤ.lt`. -/
     theorem lt_iff_le_and_ne {x y : ℤ} : x < y ↔ x ≤ y ∧ x ≠ y := order.lt_iff_le_and_ne
     theorem le_iff_lt_or_eq {x y : ℤ} : x ≤ y ↔ x < y ∨ x = y := order.le_iff_lt_or_eq
@@ -145,6 +147,13 @@ namespace Numbers.ℤ.results
     theorem lt_asymm {x y : ℤ} : x < y → ¬ (y < x) := order.lt_asymm
     theorem lt_trans {x y z : ℤ} : x < y → y < z → x < z := order.lt_trans
   end ordered_ring
+
+
+
+  -- SECTION: Basic number theory
+  namespace number_theory
+    --
+  end number_theory -- thank heavens
 
 
 

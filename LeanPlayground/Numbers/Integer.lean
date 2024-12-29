@@ -679,6 +679,9 @@ namespace ℤ
         rw [sub_eq_add_neg, neg_neg, add_comm, ←sub_eq_add_neg]
       }
       exists a
+
+    theorem le_of_nat {x : ℕ} : (0 : ℤ) ≤ (x : ℤ) := by
+      exists x
   end order
 
 
