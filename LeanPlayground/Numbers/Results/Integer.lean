@@ -202,6 +202,8 @@ namespace Numbers.ℤ.results
         ∨ (x = -1 ∧ y = -1)
       := arith.solve_mul_eq_one
 
+    theorem neg_inj {x y : ℤ} : -x = -y ↔ x = y := arith.neg_inj
+
     -- More results will come to mind as they prove useful
   end ring
 
@@ -256,6 +258,7 @@ namespace Numbers.ℤ.results
     theorem divides_antisymm {x y : ℤ} : x ∣ y → y ∣ x → x = y ∨ x = -y := divisibility.divides_antisymm
     theorem divides_trans {x y z : ℤ} : x ∣ y → y ∣ z → x ∣ z := divisibility.divides_trans
     theorem le_of_divides {d x : ℤ} : x > 0 → d ∣ x → d ≤ x := divisibility.le_of_divides
+    theorem divides_iff_divides_neg {d x : ℤ} : d ∣ -x ↔ d ∣ x := divisibility.divides_iff_divides_neg
   end number_theory -- thank heavens
 
 

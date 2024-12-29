@@ -1483,6 +1483,12 @@ namespace ℤ
           case inr h_y =>
             apply Or.inr ; constructor <;> assumption
 
+    theorem neg_inj {x y : ℤ} : -x = -y ↔ x = y := by
+      constructor
+      case mpr =>
+        intro h ; rw [h]
+      case mp =>
+        intro h ; rw [neg_eq_comm, neg_neg, Eq.comm] at h ; assumption
   end arith
 
 
@@ -1556,7 +1562,24 @@ namespace ℤ
             apply nonneg_of_mul_nonneg <;> assumption
           apply le_iff_sub_nonneg.mpr
           assumption
-    #check ℤ.order.lt_iff_not_ge
+
+    theorem divides_iff_divides_neg {d x : ℤ} : d ∣ -x ↔ d ∣ x := by
+      constructor
+      case mp =>
+        intro ⟨a, h_a⟩
+        exists -a
+        rw  [ neg_eq_comm
+            , Eq.comm
+            , neg_mul_right
+            ] at h_a
+        assumption
+      case mpr =>
+        intro ⟨a, h_a⟩
+        exists -a
+        rw  [ ←neg_mul_right
+            , neg_inj
+            ]
+        assumption
   end divisibility
 
   -- def prime (p : ℤ) : Prop := p > 1 ∧ ∀ (d : ℤ)
