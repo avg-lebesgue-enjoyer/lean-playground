@@ -2557,6 +2557,8 @@ namespace ℤ
       **Bezout's lemma**, aka literally everything I know about number theory.
 
       I didn't bother to prove the version that solves the `= gcd a b` equation because I *really* don't want to define a `gcd` function.
+
+      This took 338 lines of code to prove.
     -/
     theorem bezout
       {a b : ℤ}
