@@ -334,13 +334,6 @@ namespace Numbers.ℤ.results
     theorem bezout {a b : ℤ} : a.coprime b → ∃ (x y : ℤ), a * x + b * y = 1 := bezout.bezout
   end number_theory -- thank heavens
 
-
-
-  /- SECTION: Results yet to be proven
-    [3.] Euclidean division and Bezout's lemma
-      Bezout's lemma (in the special case of **coprime** coefficients, because I don't want to *think* about writing a `gcd` function right now)
-      (After this is done, move to a new file `Modular.lean` and start reasoning about `ℤ ⧸ n`; goal is still fund. arith.)
-  -/
-
+  -- That's all I intended to prove about `ℤ` :)
 
 end Numbers.ℤ.results
