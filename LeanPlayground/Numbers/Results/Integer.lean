@@ -53,7 +53,7 @@ namespace Numbers.ℤ.results
 
 
 
-  -- SECTION: Coersion `ℕ ↪ ℤ`
+  -- SECTION: Coercion `ℕ ↪ ℤ`
   instance : Coe ℕ ℤ where coe := Numbers.ℤ.coe_from_ℕ.it.coe
   namespace coe_ℕ
     theorem coe_ℕ_hom_add {a b : ℕ} : ((a + b : ℕ) : ℤ) = (a : ℤ) + (b : ℤ) := coe.coe_ℕ_hom_add
