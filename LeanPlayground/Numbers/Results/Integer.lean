@@ -323,6 +323,15 @@ namespace Numbers.ℤ.results
       → coprime a d
       → r ≠ 0
       := coprime.remainder_nonzero_of_coprime
+
+    /--
+      **Bezout's lemma**, aka literally everything I know about number theory.
+
+      I didn't bother to prove the version that solves the `= gcd a b` equation because I *really* don't want to define a `gcd` function.
+
+      This took 338 lines of code to prove.
+    -/
+    theorem bezout {a b : ℤ} : a.coprime b → ∃ (x y : ℤ), a * x + b * y = 1 := bezout.bezout
   end number_theory -- thank heavens
 
 
