@@ -150,6 +150,9 @@ namespace Numbers.ℕ.results
     theorem le_iff_lt_v_eq {x y : ℕ} : x ≤ y ↔ x < y ∨ x = y := Numbers.ℕ.order.le_iff_lt_v_eq
     theorem lt_iff_le_and_neq {x y : ℕ} : x < y ↔ x ≤ y ∧ x ≠ y := Numbers.ℕ.order.lt_iff_le_and_neq
     theorem lt_succ_iff_le {x y : ℕ} : x < succ y ↔ x ≤ y := Numbers.ℕ.order.lt_succ_iff_le
+
+    -- NOTE: This proved really useful later, although I had brushed it off as "too niche to export" earlier T-T
+    theorem ge_1_of_ne_0 {x : ℕ} : x ≠ 0 → 1 ≤ x := Numbers.ℕ.le.ge_1_of_ne_0
   end order
 
 

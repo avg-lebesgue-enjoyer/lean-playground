@@ -55,6 +55,11 @@ namespace Numbers.ℤ.results
 
   -- SECTION: Coersion `ℕ ↪ ℤ`
   instance : Coe ℕ ℤ where coe := Numbers.ℤ.coe_from_ℕ.it.coe
+  namespace coe_ℕ
+    theorem coe_ℕ_hom_add {a b : ℕ} : ((a + b : ℕ) : ℤ) = (a : ℤ) + (b : ℤ) := coe.coe_ℕ_hom_add
+    theorem coe_ℕ_hom_mul {a b : ℕ} : ((a * b : ℕ) : ℤ) = (a : ℤ) * (b : ℤ) := coe.coe_ℕ_hom_mul
+    theorem coe_ℕ_hom_le {a b : ℕ} : a ≤ b ↔ (a : ℤ) ≤ (b : ℤ) := coe.coe_ℕ_hom_le
+  end coe_ℕ
 
 
 
@@ -96,6 +101,8 @@ namespace Numbers.ℤ.results
     theorem neg_mk {a b : ℕ} : - ℤ.mk (a, b) = ℤ.mk (b, a) := arith.neg_mk
     /-- The defining property of `ℤ.mul`: it does that stuff on arguments of the form `ℤ.mk (thing : ℕ × ℕ)`. -/
     theorem mul_mk {a b x y : ℕ} : (ℤ.mk (a, b)) * (ℤ.mk (x, y)) = ℤ.mk (a * x + b * y, a * y + b * x) := arith.mul_mk
+    /-- Not a defining property, but super useful. -/
+    theorem sub_mk {a b x y : ℕ} : mk (a, b) - mk (x, y) = mk (a + y, b + x) := arith.sub_mk
 
     /-- My beloved <3, specialised to `ℤ`. (Note to self: Holds in any ring. Should generalise the proof...) -/
     theorem add_right_comm {x y : ℤ} (z : ℤ) : x + y + z = x + z + y := arith.add_right_comm z
@@ -255,6 +262,11 @@ namespace Numbers.ℤ.results
     theorem le_neg_swap {x y : ℤ} : -x ≤ -y ↔ y ≤ x := order.le_neg_swap
     theorem neg_iff_neg_pos {x : ℤ} : x < 0 ↔ 0 < -x := order.neg_iff_neg_pos
     theorem nonpos_iff_neg_nonneg {x : ℤ} : x ≤ 0 ↔ 0 ≤ -x := order.nonpos_iff_neg_nonneg
+
+    theorem ne_of_lt {x y : ℤ} : x < y → x ≠ y := order.ne_of_lt
+    theorem ne_of_gt {x y : ℤ} : x > y → x ≠ y := order.ne_of_gt
+
+    theorem neg_pos_of_neg {a : ℤ} : a < 0 → 0 < -a := order.neg_pos_of_neg
   end ordered_ring
 
 
@@ -264,8 +276,17 @@ namespace Numbers.ℤ.results
     theorem divides_refl (x : ℤ) : x ∣ x := divisibility.divides_refl x
     theorem divides_antisymm {x y : ℤ} : x ∣ y → y ∣ x → x = y ∨ x = -y := divisibility.divides_antisymm
     theorem divides_trans {x y z : ℤ} : x ∣ y → y ∣ z → x ∣ z := divisibility.divides_trans
+
     theorem le_of_divides {d x : ℤ} : x > 0 → d ∣ x → d ≤ x := divisibility.le_of_divides
     theorem divides_iff_divides_neg {d x : ℤ} : d ∣ -x ↔ d ∣ x := divisibility.divides_iff_divides_neg
+
+    theorem divides_mul {d x y : ℤ} : d ∣ x → d ∣ (x * y) := divisibility.divides_mul
+    theorem divides_mul_right {d x y : ℤ} : d ∣ y → d ∣ (x * y) := divisibility.divides_mul_right
+    theorem divides_sum {d x y : ℤ} : d ∣ x → d ∣ y → d ∣ (x + y) := divisibility.divides_sum
+
+    theorem unit_of_divides_unit {d u : ℤ} : u.invertible → d ∣ u → d.invertible := divisibility.unit_of_divides_unit
+    theorem divides_zero (d : ℤ) : d ∣ 0 := divisibility.divides_zero d
+    theorem divides_of_divides_neg {d x : ℤ} : d ∣ (-x) → d ∣ x := divisibility.divides_of_divides_neg
 
     /-- *Pain* to prove. -/
     theorem euclidean_division
@@ -280,13 +301,34 @@ namespace Numbers.ℤ.results
           → q = q' ∧ r = r'
         )
       := @euc_div.euclidean_division d x h_d_pos
+
+    theorem remainder_coprime
+      {a d q r : ℤ}
+      : a = d * q + r
+      → coprime a d
+      → coprime d r
+      := coprime.remainder_coprime
+
+    theorem coprime_symm {a b : ℤ} : a.coprime b → b.coprime a := coprime.coprime_symm
+    theorem coprime_comm {a b : ℤ} : a.coprime b ↔ b.coprime a := coprime.coprime_comm
+    theorem coprime_neg {a b : ℤ} : a.coprime b → a.coprime (-b) := coprime.coprime_neg
+    theorem neg_coprime {a b : ℤ} : a.coprime b → (-a).coprime b := coprime.neg_coprime
+    theorem invertible_of_coprime_self {a : ℤ} : a.coprime a → a.invertible := coprime.invertible_of_coprime_self
+    theorem not_coprime_self {a : ℤ} : ¬ a.invertible → ¬ a.coprime a := coprime.not_coprime_self
+
+    theorem remainder_nonzero_of_coprime
+      {a d q r : ℤ}
+      : a = d * q + r
+      → ¬ d.invertible
+      → coprime a d
+      → r ≠ 0
+      := coprime.remainder_nonzero_of_coprime
   end number_theory -- thank heavens
 
 
 
   /- SECTION: Results yet to be proven
     [3.] Euclidean division and Bezout's lemma
-      `def coprime : ℤ → ℤ → Prop`
       Bezout's lemma (in the special case of **coprime** coefficients, because I don't want to *think* about writing a `gcd` function right now)
       (After this is done, move to a new file `Modular.lean` and start reasoning about `ℤ ⧸ n`; goal is still fund. arith.)
   -/

@@ -822,6 +822,8 @@ namespace ℤ
 
     theorem neg_zero_eq_zero : - (0 : ℤ) = (0 : ℤ) := by
       rw [←ntn_zero, neg_mk]
+
+    theorem sub_mk {a b x y : ℕ} : mk (a, b) - mk (x, y) = mk (a + y, b + x) := rfl
   end arith
 
 
@@ -1287,6 +1289,22 @@ namespace ℤ
       }
       rw [Iff.comm]
       exact le_neg_swap
+
+    theorem ne_of_lt {x y : ℤ} : x < y → x ≠ y := by
+      intro h_x_lt_y h_x_eq_y
+      rw [h_x_eq_y] at h_x_lt_y
+      have := lt_irrefl y
+      contradiction -- `y < y`
+    theorem ne_of_gt {x y : ℤ} : x > y → x ≠ y := by
+      intro h_x_gt_y h_x_eq_y
+      rw [h_x_eq_y] at h_x_gt_y
+      have := lt_irrefl y
+      contradiction -- `y < y`
+
+    theorem neg_pos_of_neg {a : ℤ} : a < 0 → 0 < -a := by
+      intro h
+      rw [←lt_neg_swap, neg_zero] at h
+      assumption
   end order
 
 
@@ -1528,6 +1546,40 @@ namespace ℤ
 
 
 
+  /- SECTION: The inclusion `ℕ ↪ ℤ` respects `+, *, ≤` -/
+  namespace coe
+    open arith
+    open order
+
+    theorem coe_ℕ_hom_add {a b : ℕ} : ((a + b : ℕ) : ℤ) = (a : ℤ) + (b : ℤ) := by
+      rw [add_mk, ℕ.results.arithmetic.add_zero]
+    theorem coe_ℕ_hom_mul {a b : ℕ} : ((a * b : ℕ) : ℤ) = (a : ℤ) * (b : ℤ) := by
+      rw  [ mul_mk
+          , ℕ.results.arithmetic.mul_zero
+          , ℕ.results.arithmetic.add_zero
+          , ℕ.results.arithmetic.mul_zero
+          , ℕ.results.arithmetic.zero_mul
+          , ℕ.results.arithmetic.add_zero]
+    theorem coe_ℕ_hom_le {a b : ℕ} : a ≤ b ↔ (a : ℤ) ≤ (b : ℤ) := by
+      constructor
+      case mp =>
+        intro ⟨δ, h_δ⟩
+        exists δ
+        rw [sub_mk, h_δ, ℕ.results.arithmetic.add_zero, ℕ.results.arithmetic.zero_add]
+        apply ℤ.sound
+        show a + δ + 0 = δ + a
+        rw [ℕ.results.arithmetic.add_zero, ℕ.results.arithmetic.add_comm]
+      case mpr =>
+        intro ⟨δ, h_δ⟩
+        rw [sub_mk, ℕ.results.arithmetic.add_zero, ℕ.results.arithmetic.zero_add] at h_δ
+        have h_δ : b = δ + a := h_δ |> ℤ.exact
+        exists δ
+        rw [ℕ.results.arithmetic.add_comm]
+        assumption
+  end coe
+
+
+
   /- SECTION: Divisibility -/
   /-- The divisibility relation on `ℤ`. -/
   def divides (d x : ℤ) : Prop := ∃ (q : ℤ), x = d * q
@@ -1615,12 +1667,46 @@ namespace ℤ
             , neg_inj
             ]
         assumption
+
+    theorem divides_mul {d x y : ℤ} : d ∣ x → d ∣ (x * y) := by
+      intro ⟨q, h_q⟩
+      exists q * y
+      rw [h_q, mul_assoc]
+    theorem divides_mul_right {d x y : ℤ} : d ∣ y → d ∣ (x * y) := by
+      rw [mul_comm]
+      exact divides_mul
+    theorem divides_sum {d x y : ℤ} : d ∣ x → d ∣ y → d ∣ (x + y) := by
+      intro ⟨X, h_X⟩ ⟨Y, h_Y⟩
+      exists X + Y
+      rw [h_X, h_Y, mul_add]
+
+    theorem unit_of_divides_unit {d u : ℤ} (h_u_inv : u.invertible) (h_d_div_u : d ∣ u) : d.invertible := by
+      have ⟨U, h_U⟩ := h_u_inv
+      have ⟨D, h_D⟩ := h_d_div_u
+      exists D * U
+      calc d * (D * U)
+        _ = d * D * U := mul_assoc
+        _ = u * U     := by rw [h_D]
+        _ = 1         := h_U
+
+    theorem divides_zero (d : ℤ) : d ∣ 0 := by
+      exists 0
+      rw [mul_zero]
+
+    theorem divides_of_divides_neg {d x : ℤ} : d ∣ (-x) → d ∣ x := by
+      intro ⟨q, h_q⟩
+      exists (-q)
+      rw  [ neg_eq_comm
+          , neg_mul_right
+          , Eq.comm
+          ] at h_q
+      assumption
   end divisibility
 
 
 
   /- SECTION: Primality -/
-  def prime (p : ℤ) : Prop := p > 1 ∧ ∀ (d : ℤ), d ∣ p → d = p ∨ d.invertible
+  def prime (p : ℤ) : Prop := p > 1 ∧ ∀ {d : ℤ}, d ∣ p → ∃ (u : ℤ), u.invertible ∧ (d = p * u ∨ d = u)
 
 
 
@@ -2109,6 +2195,443 @@ namespace ℤ
                   _ = δ + r'.succ := by rw [←h_δδ']
                 exact ℕ.results.arithmetic.add_left_cancel this
   end euc_div
+
+
+
+  /- SECTION: Coprimality -/
+  def coprime (x y : ℤ) : Prop := ∀ (d : ℤ), d ∣ x → d ∣ y → d.invertible
+  namespace coprime
+    open arith
+    open divisibility
+
+    theorem remainder_coprime
+      {a d q r : ℤ}
+      : a = d * q + r
+      → coprime a d
+      → coprime d r
+      := by
+        intro h_qr h_a_cop_d e h_ed h_er
+        apply h_a_cop_d
+        · rw [h_qr]
+          apply divides_sum
+          · apply divides_mul
+            assumption
+          · assumption
+        · assumption
+
+    open ℕ.results in
+    theorem zero_not_cop_zero : ¬ (0 : ℤ).coprime 0 := by
+      intro h_0_cop_0
+      suffices (1 + 1 : ℤ).invertible by
+        have ⟨i, h_i⟩ := this
+        have ⟨a, b, h_ab⟩ := i.existsRep
+        rw  [ h_ab
+            , ←ntn_one
+            , add_mk
+            , mul_mk
+            , arithmetic.add_mul
+            , arithmetic.add_zero
+            , arithmetic.zero_mul
+            , arithmetic.add_zero
+            , arithmetic.one_mul
+            , arithmetic.add_mul
+            , arithmetic.one_mul
+            , arithmetic.zero_mul
+            , arithmetic.add_zero
+            ] at h_i
+        have h_i : a + a = 1 + (b + b) := h_i |> ℤ.exact
+        have silver_bullet := (euclidean.division (a + a) (1 + 1) (by intro h; injection h)).right a b 0 1
+        suffices (0 : ℕ) = (1 : ℕ) by injection this
+        apply And.right ∘ silver_bullet
+        constructor <;> (try constructor) <;> (try constructor)
+        · show a + a = (1 + 1) * a + 0
+          rw [arithmetic.add_zero, arithmetic.add_mul, arithmetic.one_mul]
+        · show a + a = (1 + 1) * b + 1
+          rw [arithmetic.add_mul, arithmetic.one_mul, arithmetic.add_comm _ 1]
+          assumption
+        · show 0 < 1 + 1
+          rw [← ℕ.results.ntn.succ_zero_eq_1, arithmetic.add_succ, ℕ.results.order.lt_succ_iff_le]
+          exact ℕ.results.order.le_zero_initial
+        · show 1 < 1 + 1
+          rw [← ℕ.results.ntn.succ_zero_eq_1, arithmetic.add_succ, ℕ.results.order.lt_succ_iff_le]
+          exact ℕ.results.order.le_refl
+      exact h_0_cop_0 (1 + 1) (divides_zero <| 1 + 1) (divides_zero <| 1 + 1)
+
+    theorem coprime_symm {a b : ℤ} : a.coprime b → b.coprime a := by
+      intros h_a_cop_b d h_b h_a
+      apply h_a_cop_b
+      <;> assumption
+    theorem coprime_comm {a b : ℤ} : a.coprime b ↔ b.coprime a := by
+      constructor <;> exact coprime_symm
+
+    theorem coprime_neg {a b : ℤ} : a.coprime b → a.coprime (-b) := by
+      intro h d h_d_div_a h_d_div_neg_b
+      have : d ∣ b := divides_of_divides_neg h_d_div_neg_b
+      apply h <;> assumption
+    theorem neg_coprime {a b : ℤ} : a.coprime b → (-a).coprime b := by
+      conv => { congr <;> rw [coprime_comm] }
+      exact coprime_neg
+
+    theorem remainder_nonzero_of_coprime
+      {a d q r : ℤ}
+      : a = d * q + r
+      → ¬ d.invertible
+      → coprime a d
+      → r ≠ 0
+      := by
+        intro h_qr _ h_a_cop_d h_r_eq_0
+        unfold coprime at h_a_cop_d
+        show False
+        rw [h_r_eq_0, add_zero] at h_qr
+        have d.invertible := h_a_cop_d d (by exists q) (divides_refl d)
+        contradiction -- `d.invertible` and `¬ d.invertible`
+
+    theorem invertible_of_coprime_self {a : ℤ} : a.coprime a → a.invertible := by
+      intro h_a_cop_a
+      exact h_a_cop_a a (divides_refl a) (divides_refl a)
+
+    theorem not_coprime_self {a : ℤ} : ¬ a.invertible → ¬ a.coprime a := mt invertible_of_coprime_self
+  end coprime
+
+
+
+  /- SECTION: Bezout's lemma (extended Euclidean algo) -/
+  namespace bezout
+    open arith
+    open order
+    open divisibility
+    open coprime
+    open coe
+
+    /-- The base case for the extended Euclidean algorithm. -/
+    theorem lemma.bezout_coefficient_one
+      {a : ℕ}
+      : ∃ (x y : ℤ), a * x + 1 * y = 1
+      := by exists 0, 1 -- remaining goal closed by `rfl`
+
+    theorem lemma.bezout_natural_coefficients_big_first
+      {a b : ℕ}
+      : (a : ℤ).coprime b
+      → a > b
+      → b ≠ 0
+      → ∃ (x y : ℤ), a * x + b * y = 1
+      := by
+        let induct_me (a : ℕ) := ∀ (b : ℕ), (a : ℤ).coprime b → a > b → b ≠ 0 → ∃ (x y : ℤ), a * x + b * y = 1
+        have inducted : ∀ (a : ℕ), 1 ≤ a → induct_me a := by
+          apply ℕ.results.induction.strong_induction_from 1 induct_me
+          · unfold induct_me
+            intro b _ ⟨δ, h_δ, h_δ_ne_0⟩ h_b_ne_0
+            -- show a contradiction
+            have := ℕ.results.arithmetic.arg_1_of_add_1 h_δ.symm
+            cases this <;> (
+              rename_i h
+              conv at h_δ => {
+                rw [h]
+                try rw [ℕ.results.arithmetic.add_comm _ 1]
+                conv => { lhs; rw [←@ℕ.results.arithmetic.add_zero 1] }
+              }
+              have h_δ := h_δ |> ℕ.results.arithmetic.add_left_cancel |> Eq.symm
+              contradiction -- `= 0` and `≠ 0`; the thing is either `δ` or `b` depending on which of the `cases this` we're in
+            )
+          · intro a h_1_le_a sih
+            unfold induct_me
+            intro b h_a_cop_b h_b_lt_a h_b_ne_0
+            have h_1_le_b : 1 ≤ b := ℕ.results.order.ge_1_of_ne_0 (by assumption)
+            -- NOTE: This is where the "extended Euclidean algorithm" itself actually happens
+            --        Good luck actually seeing it though. There are *a lot* of menial proofs to sift through...
+            by_cases h : b = 1
+            case pos => -- NOTE: Hit base case of algo: `h : b = 1`
+              rw [h, ntn_one]
+              apply lemma.bezout_coefficient_one
+            case neg => -- NOTE: Recursive case of algo: `h : b ≠ 1`
+            have ⟨q, r, h_qr, h_r⟩ := ℕ.results.euclidean.division a b (by assumption) |> And.left
+            have h_qr' : mk (a, 0) = mk (b, 0) * mk (q, 0) + mk (r, 0) := by
+              rw [← coe_ℕ_hom_mul, ← coe_ℕ_hom_add]
+              apply ℤ.sound
+              show a = b * q + r
+              assumption
+            have h_b_cop_r : (b : ℤ).coprime r := by
+              exact remainder_coprime (q := q) (r := r) (by assumption) h_a_cop_b
+            have h_not_b_inv : ¬ (b : ℤ).invertible := by
+              intro ⟨B, h_B⟩
+              have ⟨C, D, h_CD⟩ := B.existsRep
+              conv at h_B => { rw
+                [ h_CD
+                , mul_mk
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.add_zero
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.add_zero
+                , ←ntn_one
+                ]}
+              have h_B : b * C = 1 + b * D := h_B |> ℤ.exact
+              rw [ℕ.results.arithmetic.add_comm] at h_B
+              have : 0 < b := by
+                match b with
+                | 0 => contradiction -- `0 = b ≠ 0`
+                | .succ b =>
+                  exists b.succ
+                  constructor
+                  · rw [ℕ.results.arithmetic.zero_add]
+                  · intro h; injection h
+              have : 1 < b := by
+                rw [ℕ.results.order.lt_iff_le_and_neq]
+                rw [Eq.comm] at h
+                constructor <;> assumption
+              have := (ℕ.results.euclidean.division (b * C) b (by assumption)).right C D 0 1 ⟨rfl, (by assumption), (by assumption), (by assumption)⟩ |> And.right
+              contradiction -- remainders of division; `0 = 1`
+            have h_r_ne_0 : r ≠ 0 := by
+              have h_r_ne_0 := remainder_nonzero_of_coprime h_qr' (by assumption) h_a_cop_b
+              intro h_r_eq_0
+              rw [h_r_eq_0, ntn_zero] at h_r_ne_0
+              contradiction -- `0 ≠ 0`
+            have h_recursed := sih b (by assumption) (by assumption)
+            unfold induct_me at h_recursed
+            have ⟨x, y, h_xy⟩ := h_recursed r (by assumption) (by assumption) (by assumption)
+            rw [h_qr]
+            conv => {
+              arg 1; intro x; arg 1; intro z; lhs; lhs; lhs
+              rw [coe_ℕ_hom_add, coe_ℕ_hom_mul]
+              }
+            conv => {
+              arg 1; intro x; arg 1; intro z; lhs
+              rw  [ add_mul
+                  , ←mul_assoc
+                  , add_right_comm
+                  , ←mul_add]
+            }
+            exists y, x - q * y
+            conv => {
+              lhs; lhs; rhs
+              rw  [ sub_eq_add_neg
+                  , add_comm x
+                  , add_assoc
+                  , add_neg
+                  , zero_add
+                  ]
+            }
+            exact h_xy -- hell yeah
+
+        intro h_a_cop_b h_b_lt_a h_b_ne_0
+        have : 1 ≤ a := by
+          match a with
+          | 0 =>
+            -- show a contradiction
+            have ⟨δ, h_δ, h_δ_ne_0⟩ := h_b_lt_a
+            have := h_δ.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.right
+            contradiction -- `δ = 0` and `δ ≠ 0`
+          | .succ a =>
+            exists a
+            rw  [ ℕ.results.arithmetic.add_comm
+                , ←ℕ.results.ntn.succ_zero_eq_1
+                , ℕ.results.arithmetic.add_succ
+                , ℕ.results.ntn.zero_eq_0
+                , ℕ.results.arithmetic.add_zero]
+        apply inducted a (by assumption) b <;> assumption
+
+    theorem lemma.bezout_natural_coefficients
+      {a b : ℕ}
+      : (a : ℤ).coprime b
+      → a ≠ 0
+      → b ≠ 0
+      → ∃ (x y : ℤ), a * x + b * y = 1
+      := by
+        intro h_a_cop_b h_a_ne_0 h_b_ne_0
+        have h_trich := ℕ.results.order.trichotomy b a
+        cases h_trich
+        case inl h_b_lt_a =>
+          apply lemma.bezout_natural_coefficients_big_first <;> assumption
+        case inr h_bich =>
+        cases h_bich
+        case inl h_b_eq_a =>
+          by_cases h : b = 1
+          case pos => -- `h : b = 1`
+            rw [h, ntn_one]
+            exact lemma.bezout_coefficient_one
+          case neg => -- `h : b ≠ 1`
+            rw [h_b_eq_a] at h_a_cop_b
+            have : ¬ (a : ℤ).coprime a := by
+              intro h_a_cop_a
+              rw [h_b_eq_a] at h
+              have : (a : ℤ).invertible := invertible_of_coprime_self h_a_cop_a
+              have : (a : ℤ) = 1 ∨ (a : ℤ) = -1 := solve_invertible this
+              cases this
+              case inl this =>
+                rw [← ntn_one] at this
+                have : a = 1 := this |> ℤ.exact
+                contradiction -- `a = 1` and `a ≠ 1`
+              case inr this =>
+                rw [← ntn_one, neg_mk] at this
+                have : a + 1 = 0 := this |> ℤ.exact
+                rw  [ ← ℕ.results.ntn.succ_zero_eq_1
+                    , ℕ.results.arithmetic.add_succ
+                    ] at this
+                injection this -- `(some thing).succ = 0`
+            contradiction -- `a.coprime a` and `¬ a.coprime a`
+        case inr h_b_gt_a =>
+          rw [coprime_comm] at h_a_cop_b
+          have ⟨x, y, h_xy⟩ := @lemma.bezout_natural_coefficients_big_first b a (by assumption) (by assumption) (by assumption)
+          exists y, x
+          rw [add_comm]
+          assumption
+
+    theorem lemma.bezout_positive_coefficients
+      (a b : ℤ)
+      : a.coprime b
+      → a > 0
+      → b > 0
+      → ∃ (x y : ℤ), a * x + b * y = 1
+      := by
+        repeat rw [gt_iff_lt, lt_mk, sub_zero]
+        intro h_a_cop_b ⟨a', h_a', h_a'_ne_0⟩ ⟨b', h_b', h_b'_ne_0⟩
+        rw [h_a', h_b']
+        apply lemma.bezout_natural_coefficients
+        · rw [←h_a', ←h_b']
+          assumption
+        · assumption
+        · assumption
+
+    open ℕ.results in
+    theorem lemma.bezout_zero_coefficients
+      : (0 : ℤ).coprime 0
+      → ∃ (x y : ℤ), 0 * x + 0 * y = 1
+      := by
+        intro ; have := zero_not_cop_zero
+        contradiction -- `0.coprime 0` and `¬ (0.coprime 0)`
+
+    theorem lemma.bezout_nonzero_noninv_with_zero
+      {a : ℤ}
+      : a ≠ 0
+      → ¬ a.invertible
+      → a.coprime 0
+      → ∃ (x y : ℤ), a * x + 0 * y = 1
+      := by
+        intro h_a_ne_0 h_a_not_inv h_a_cop_0
+        suffices False by contradiction
+        unfold coprime at h_a_cop_0
+        have := h_a_cop_0 a (divides_refl a) (divides_zero a)
+        contradiction -- `a.invertible` and `¬ a.invertible`
+
+    theorem lemma.bezout_inv_with_zero
+      {a : ℤ}
+      : a.invertible
+      → ∃ (x y : ℤ), a * x + 0 * y = 1
+      := by
+        intro ⟨A, h_A⟩
+        exists A, 0
+        rw [mul_zero, add_zero, h_A]
+
+    theorem lemma.bezout_zero_coefficient
+      (a : ℤ)
+      : a ≠ 0
+      → a.coprime 0
+      → ∃ (x y : ℤ), a * x + 0 * y = 1
+      := by
+        intro h_a_ne_0 h_a_cop_0
+        by_cases h : a.invertible
+        case pos => -- `h : a.invertible`
+          apply lemma.bezout_inv_with_zero
+          assumption
+        case neg => -- `h : ¬ a.invertible`
+          apply lemma.bezout_nonzero_noninv_with_zero
+          <;> assumption
+
+    theorem lemma.bezout_zero_coefficient_right
+      (b : ℤ)
+      : b ≠ 0
+      → (0 : ℤ).coprime b
+      → ∃ (x y : ℤ), 0 * x + b * y = 1
+      := by
+        conv => {
+          rhs
+          rw [coprime_comm]
+          rhs
+          arg 1 ; intro x ; arg 1 ; intro y
+          rw [add_comm]
+        }
+        intro h_b_ne_0 h_b_cop_0
+        have ⟨y, x, h⟩ := lemma.bezout_zero_coefficient b h_b_ne_0 h_b_cop_0
+        exists x, y
+
+    /--
+      **Bezout's lemma**, aka literally everything I know about number theory.
+
+      I didn't bother to prove the version that solves the `= gcd a b` equation because I *really* don't want to define a `gcd` function.
+    -/
+    theorem bezout
+      {a b : ℤ}
+      : a.coprime b
+      → ∃ (x y : ℤ), a * x + b * y = 1
+      := by
+        -- This proof splits on the signs of `a` and `b`, and does the obvious
+        --  descending to one of the lemmas. It's all menial.
+        intro h_a_cop_b
+        have h_sign_a := lt_trichotomy 0 a
+        have h_sign_b := lt_trichotomy 0 b
+        cases h_sign_a
+        case inl h_0_lt_a =>
+          cases h_sign_b
+          case inl h_0_lt_b =>
+            apply lemma.bezout_positive_coefficients a b h_a_cop_b
+            <;> assumption
+          case inr h_sign_b =>
+          cases h_sign_b
+          case inl h_0_eq_b =>
+            rw [←h_0_eq_b]
+            rw [←h_0_eq_b] at h_a_cop_b
+            have h_a_ne_0 : a ≠ 0 := ne_of_gt h_0_lt_a
+            apply lemma.bezout_zero_coefficient a
+            <;> assumption
+          case inr h_b_lt_0 =>
+            have : 0 < (-b) := by
+              rw [←lt_neg_swap, neg_zero] at h_b_lt_0
+              assumption
+            have h_a_cop_neg_b : a.coprime (-b) := coprime_neg h_a_cop_b
+            have ⟨x, y, h_xy⟩ := lemma.bezout_positive_coefficients a (-b) h_a_cop_neg_b h_0_lt_a this
+            exists x, -y
+            rw [←neg_mul_right, neg_mul]
+            assumption
+        case inr h_sign_a =>
+        cases h_sign_a
+        case inl h_0_eq_a =>
+          rw [←h_0_eq_a]
+          rw [←h_0_eq_a] at h_a_cop_b
+          by_cases h : b = 0
+          case pos => -- `h : b = 0`
+            rw [h] at h_a_cop_b
+            rw [h]
+            apply lemma.bezout_zero_coefficients
+            assumption
+          case neg => -- `h : b ≠ 0`
+            apply lemma.bezout_zero_coefficient_right
+            <;> assumption
+        case inr h_a_lt_0 =>
+          have : 0 < -a := neg_pos_of_neg (by assumption)
+          have h_neg_a_cop_b : (-a).coprime b := neg_coprime h_a_cop_b
+          cases h_sign_b
+          case inl h_0_lt_b =>
+            have ⟨x, y, h_xy⟩ := lemma.bezout_positive_coefficients (-a) b (by assumption) (by assumption) (by assumption)
+            exists -x, y
+            rw [←neg_mul_right, neg_mul]
+            assumption
+          case inr h_sign_b =>
+          cases h_sign_b
+          case inl h_0_eq_b =>
+            rw [←h_0_eq_b]
+            rw [←h_0_eq_b, coprime_comm] at h_neg_a_cop_b
+            have : -a ≠ 0 := ne_of_gt this
+            have ⟨x, y, h_xy⟩ := lemma.bezout_zero_coefficient_right (-a) this h_neg_a_cop_b
+            exists -y, x
+            rw [←neg_mul_right, neg_mul, add_comm]
+            assumption
+          case inr h_b_lt_0 =>
+            have : 0 < -b := neg_pos_of_neg (by assumption)
+            have : (-a).coprime (-b) := coprime_neg h_neg_a_cop_b
+            have ⟨x, y, h_xy⟩ := lemma.bezout_positive_coefficients (-a) (-b) (by assumption) (by assumption) (by assumption)
+            exists -x, -y
+            rw [←neg_mul_right, ←neg_mul_right, neg_mul, neg_mul]
+            assumption
+  end bezout
 end ℤ
 
 end Numbers
