@@ -147,8 +147,6 @@ namespace Numbers.Modular.results
 
 
   /- SECTION: Results yet to be proven
-    [0.] Induction principles; see `ℤ` for inspiration
-      include the "canonical representative" given by the remainder after division
     [1.] Ring results
       Prove everything that's there
     [2.] Field results
