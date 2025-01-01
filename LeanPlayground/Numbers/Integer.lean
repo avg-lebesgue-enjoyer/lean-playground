@@ -1551,6 +1551,19 @@ namespace ℤ
     open arith
     open order
 
+    theorem coe_ℕ_hom_eq {a b : ℕ} : a = b ↔ (a : ℤ) = (b : ℤ) := by
+      constructor
+      case mp =>
+        intro h ; rw [h]
+      case mpr =>
+        intro h
+        have : a = b := ℤ.exact h
+        assumption
+    theorem coe_ℕ_hom_ne {a b : ℕ} : a ≠ b ↔ (a : ℤ) ≠ (b : ℤ) := by
+      constructor <;> apply mt
+      · exact coe_ℕ_hom_eq.mpr
+      · exact coe_ℕ_hom_eq.mp
+
     theorem coe_ℕ_hom_add {a b : ℕ} : ((a + b : ℕ) : ℤ) = (a : ℤ) + (b : ℤ) := by
       rw [add_mk, ℕ.results.arithmetic.add_zero]
     theorem coe_ℕ_hom_mul {a b : ℕ} : ((a * b : ℕ) : ℤ) = (a : ℤ) * (b : ℤ) := by
@@ -1560,6 +1573,7 @@ namespace ℤ
           , ℕ.results.arithmetic.mul_zero
           , ℕ.results.arithmetic.zero_mul
           , ℕ.results.arithmetic.add_zero]
+
     theorem coe_ℕ_hom_le {a b : ℕ} : a ≤ b ↔ (a : ℤ) ≤ (b : ℤ) := by
       constructor
       case mp =>
@@ -1576,6 +1590,11 @@ namespace ℤ
         exists δ
         rw [ℕ.results.arithmetic.add_comm]
         assumption
+    theorem coe_ℕ_hom_lt {a b : ℕ} : a < b ↔ (a : ℤ) < (b : ℤ) := by
+      rw  [ ℕ.results.order.lt_iff_le_and_neq
+          , lt_iff_le_and_ne
+          , coe_ℕ_hom_le
+          , coe_ℕ_hom_ne]
   end coe
 
 

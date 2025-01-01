@@ -56,9 +56,12 @@ namespace Numbers.ℤ.results
   -- SECTION: Coercion `ℕ ↪ ℤ`
   instance : Coe ℕ ℤ where coe := Numbers.ℤ.coe_from_ℕ.it.coe
   namespace coe_ℕ
+    theorem coe_ℕ_hom_eq {a b : ℕ} : (a = b) ↔ (a : ℤ) = (b : ℤ) := coe.coe_ℕ_hom_eq
+    theorem coe_ℕ_hom_ne {a b : ℕ} : a ≠ b ↔ (a : ℤ) ≠ (b : ℤ) := coe.coe_ℕ_hom_ne
     theorem coe_ℕ_hom_add {a b : ℕ} : ((a + b : ℕ) : ℤ) = (a : ℤ) + (b : ℤ) := coe.coe_ℕ_hom_add
     theorem coe_ℕ_hom_mul {a b : ℕ} : ((a * b : ℕ) : ℤ) = (a : ℤ) * (b : ℤ) := coe.coe_ℕ_hom_mul
     theorem coe_ℕ_hom_le {a b : ℕ} : a ≤ b ↔ (a : ℤ) ≤ (b : ℤ) := coe.coe_ℕ_hom_le
+    theorem coe_ℕ_hom_lt {a b : ℕ} : a < b ↔ (a : ℤ) < (b : ℤ) := coe.coe_ℕ_hom_lt
   end coe_ℕ
 
 

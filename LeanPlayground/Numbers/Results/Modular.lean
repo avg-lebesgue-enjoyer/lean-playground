@@ -13,7 +13,22 @@ import LeanPlayground.Numbers.Modular
 
 namespace Numbers.Modular.results
   -- SECTION: Induction/universal-property/pattern-matching principles
-
+  @[inherit_doc Numbers.ℤMod.exact]
+  theorem ℤMod.exact {m x y : ℤ} : (ℤMod.mk x : ℤ ⧸ m) = ℤMod.mk y → same_remainder m x y := Numbers.ℤMod.exact
+  @[inherit_doc Numbers.ℤMod.sound]
+  theorem ℤMod.sound {m x y : ℤ} : same_remainder m x y → (ℤMod.mk x : ℤ ⧸ m) = ℤMod.mk y := Numbers.ℤMod.sound
+  @[inherit_doc Numbers.ℤMod.quotax]
+  theorem ℤMod.quotax {m x y : ℤ} : same_remainder m x y ↔ (ℤMod.mk x : ℤ ⧸ m) = ℤMod.mk y := Numbers.ℤMod.quotax
+  @[inherit_doc Numbers.ℤMod.ind]
+  theorem ℤMod.ind {m : ℤ} {β : (ℤ ⧸ m) → Prop} (mk : ∀ (z : ℤ), β (ℤMod.mk z)) : (a : ℤ ⧸ m) → β a := Numbers.ℤMod.ind mk
+  @[inherit_doc Numbers.ℤMod.indOn]
+  theorem ℤMod.indOn {m : ℤ} (a : ℤ ⧸ m) {β : (ℤ ⧸ m) → Prop} (mk : ∀ (z : ℤ), β (ℤMod.mk z)) : β a := Numbers.ℤMod.indOn a mk
+  @[inherit_doc Numbers.ℤMod.existsRep]
+  theorem ℤMod.existsRep {m : ℤ} (a : ℤ ⧸ m) : ∃ (z : ℤ), a = ℤMod.mk z := Numbers.ℤMod.existsRep a
+  @[inherit_doc Numbers.ℤMod.existsCanonRep]
+  theorem ℤMod.existsCanonRep {n : ℕ} (h_n_ne_zero : n ≠ 0) (a : ℤ ⧸ n) : ∃ (r : ℕ), a = ℤMod.mk r ∧ r < n := Numbers.ℤMod.existsCanonRep h_n_ne_zero a
+  @[inherit_doc Numbers.ℤMod.lift]
+  def ℤMod.lift {m : ℤ} {β : Sort u} (f : ℤ → β) : (∀ (x y : ℤ), same_remainder m x y → f x = f y) → (ℤ ⧸ m) → β := Numbers.ℤMod.lift f
 
 
   -- SECTION: Notation
