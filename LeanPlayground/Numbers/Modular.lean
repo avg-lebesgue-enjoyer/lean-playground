@@ -61,6 +61,5 @@ end same_remainder
 /-- The integers modulo an integer. `ℤ ⧸ m` is defined as `ℤ ⧸ same_remainder m`. -/
 def ℤMod (m : ℤ) : Type := Quotient (same_remainder.setoid m)
 @[inherit_doc] notation:max "ℤ ⧸ " m => ℤMod m
-
 /-- Canonical quotient map onto `ℤ ⧸ m := ℤ ⧸ same_remainder m`. -/
 def ℤMod.mk {m : ℤ} : ℤ → ℤ ⧸ m := Quotient.mk (same_remainder.setoid m)
