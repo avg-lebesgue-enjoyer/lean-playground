@@ -53,12 +53,14 @@ namespace same_remainder
 
   theorem equivalence {m : ℤ} : Equivalence (same_remainder m) :=
     { refl := refl, symm := symm, trans := trans }
-  instance setoid {m : ℤ} : Setoid ℤ where
+  instance setoid (m : ℤ) : Setoid ℤ where
     r := same_remainder m
     iseqv := equivalence
 end same_remainder
 
--- /-- `ℤ / m`, defined as `ℤ ⧸ same_remainder m`. -/
--- def ℤMod : Type := Quotient same_difference.setoid
--- /-- Canonical quotient map onto `ℤ ⧸ m := ℤ ⧸ same_remainder m`. -/
--- def ℤMod.mk : ℕ × ℕ → ℤ := Quotient.mk same_difference.setoid
+/-- The integers modulo an integer. `ℤ ⧸ m` is defined as `ℤ ⧸ same_remainder m`. -/
+def ℤMod (m : ℤ) : Type := Quotient (same_remainder.setoid m)
+@[inherit_doc] notation:max "ℤ ⧸ " m => ℤMod m
+
+/-- Canonical quotient map onto `ℤ ⧸ m := ℤ ⧸ same_remainder m`. -/
+def ℤMod.mk {m : ℤ} : ℤ → ℤ ⧸ m := Quotient.mk (same_remainder.setoid m)
