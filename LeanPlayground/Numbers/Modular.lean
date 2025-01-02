@@ -464,27 +464,44 @@ namespace ℤMod
 
 
 
-  /- SECTION: Specialised field results modulo a *prime* -/
+  /- SECTION: ⟦x⟧ = 0 ↔ m ∣ x -/
   namespace arith
+    theorem eq_zero_iff_multiple {x : ℤ} : (x : ℤ ⧸ m) = (0 : ℤ ⧸ m) ↔ m ∣ x := by
+      rw  [ ←ntn_zero
+          , ←ℤMod.quotax  -- good foresight to make a version of the induction axioms as a rewrite rule
+          , same_remainder
+          , ℤ.results.ring.zero_sub
+          , ℤ.results.number_theory.divides_iff_divides_neg]
+  end arith
+
+
+
+  /- SECTION: Specialised field results modulo a *prime* -/
+  section da_field
+  variable {p : ℤ} {_ : p.prime}
+
+  namespace arith
+    /-- FIXME: Prove this!! -/
     theorem nonzero_invertible_mod_prime
       {p : ℤ} (_ : p.prime)
       (x : ℤ ⧸ p) (_ : x ≠ 0)
       : ∃ (y : ℤ ⧸ p), x * y = 1
       := by
-        admit -- TODO: idea is to go via `ℤ.results.number_theory.bezout`
+        admit -- TODO: idea is to go via `ℤ.results.number_theory.bezout` on a *canonical* representative (proving coprimality should be easier)
   end arith
 
   noncomputable
   def inv {p : ℤ} {_ : p.prime} (x : ℤ ⧸ p) {_ : x ≠ 0} : ℤ ⧸ p := Classical.choose <| arith.nonzero_invertible_mod_prime ‹p.prime› x ‹x ≠ 0›
-  postfix:max "⁻¹" => inv -- FIXME: this is shit. I hate fields...
+  set_option quotPrecheck false
+  notation:max x "⁻¹" => @inv p ‹p.prime› x ‹x ≠ 0› -- this is kinda a hack...
+  set_option quotPrecheck true
 
   namespace arith
-    -- example {x : ℤ ⧸ p} {_ : x ≠ 0} {_ : p.prime} : ℤ ⧸ p := x⁻¹
+    -- KILLME: (good, the notation works)
+    noncomputable
+    example {x : ℤ ⧸ p} {_ : x ≠ 0} : ℤ ⧸ p := x⁻¹
   end arith
-
-  -- namespace arith
-
-  -- end arith
+  end da_field
 
 end ℤMod
 

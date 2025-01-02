@@ -116,6 +116,8 @@ namespace Numbers.Modular.results
     theorem neg_mul_neg {m : ℤ} {x y : ℤ ⧸ m} : (-x) * (-y) = x * y := arith.neg_mul_neg
 
     theorem neg_eq_comm {x y : ℤ ⧸ m} : -x = y ↔ -y = x := arith.neg_eq_comm
+
+    theorem eq_zero_iff_multiple {x : ℤ} : (x : ℤ ⧸ m) = (0 : ℤ ⧸ m) ↔ m ∣ x := arith.eq_zero_iff_multiple
   end ring
 
 
@@ -134,7 +136,8 @@ namespace Numbers.Modular.results
 
   -- More results
   namespace field
-    --
+    -- theorem null_factor {p : ℤ} {_ : p.prime} {x y : ℤ ⧸ p} : x * y = 0 ↔ x = 0 ∨ y = 0 := sorry
+    -- theorem null_factor_divisibility {p : ℤ} {_ : p.prime} {x y : ℤ} : p ∣ (x * y) ↔ (p ∣ x) ∨ (p ∣ y) := sorry
   end field
 
 
