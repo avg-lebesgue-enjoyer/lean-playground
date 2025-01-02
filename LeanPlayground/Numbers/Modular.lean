@@ -257,6 +257,32 @@ namespace ℤMod
     @[simp]
     theorem neg_zero {m : ℤ} : - (0 : ℤ ⧸ m) = 0 := by
       simp [←ntn_zero, neg_mk, ℤ.results.ring.neg_zero]
+
+    @[simp]
+    theorem neg_inj {m : ℤ} {x y : ℤ ⧸ m} : -x = -y ↔ x = y := by
+      constructor
+      case mpr =>
+        intro h; rw [h]
+      case mp =>
+        intro h
+        rw [(neg_neg (x := x)).symm, (neg_neg (x := y)).symm, h]
+
+    @[simp]
+    theorem add_left_cancel {c x y : ℤ ⧸ m} : c + x = c + y ↔ x = y := by
+      constructor
+      case mpr =>
+        intro h; rw [h]
+      case mp =>
+        intro h
+        calc x
+          _ = (-c + c) + x  := by simp
+          _ = -c + (c + x)  := by rw [← add_assoc]
+          _ = -c + (c + y)  := by rw [h]
+          _ = y             := by simp
+    @[simp]
+    theorem add_right_cancel {c x y : ℤ ⧸ m} : x + c = y + c ↔ x = y := by
+      repeat rw [add_comm _ c]
+      exact add_left_cancel
   end arith
 
 
@@ -336,8 +362,130 @@ namespace ℤMod
 
 
 
+  /- SECTION: Multiplication and negation -/
+  namespace arith
+    @[simp]
+    theorem mul_neg_one {m : ℤ} {x : ℤ ⧸ m} : x * (-1) = -x := by
+      have : x * -1 + x = 0 := calc x * -1 + x
+        _ = x * -1 + x * 1 := by simp
+        _ = x * (-1 + 1) := by rw [mul_add]
+        _ = 0 := by simp
+      calc x * -1
+        _ = x * -1 + 0 := by simp
+        _ = x * -1 + (x + -x) := by simp
+        _ = x * -1 + x + -x := by rw [add_assoc]
+        _ = 0 + -x := by rw [this]
+        _ = -x := by simp
+    @[simp]
+    theorem neg_one_mul {m : ℤ} {x : ℤ ⧸ m} : (-1) * x = -x := by
+      rw [mul_comm] ; exact mul_neg_one
 
-  /- SECTION: Arithmetic homs re. coersion `ℕ → ℤ → ℤ ⧸ m` -/
+    @[simp]
+    theorem neg_mul {m : ℤ} {x y : ℤ ⧸ m} : -x * y = - (x * y) := by
+      apply Eq.symm
+      have : x * y + -x * y = 0 := by
+        rw [← add_mul]
+        simp
+      calc - (x * y)
+        _ = - (x * y) + 0 := by simp
+        _ = - (x * y) + (x * y + -x * y) := by rw [this]
+        _ = -x * y := by simp
+    @[simp]
+    theorem mul_neg {m : ℤ} {x y : ℤ ⧸ m} : x * -y = - (x * y) := by
+      rw [mul_comm]
+      simp
+      rw [mul_comm]
+    @[simp]
+    theorem neg_mul_neg {m : ℤ} {x y : ℤ ⧸ m} : (-x) * (-y) = x * y := by simp
+
+    -- idk where to put this one really
+    theorem neg_eq_comm {x y : ℤ ⧸ m} : -x = y ↔ -y = x := by
+      constructor
+      <;> (intro h; rw [h.symm, neg_neg])
+
+  end arith
+
+
+
+  /- SECTION: Subtraction -/
+  def sub {m : ℤ} (x y : ℤ ⧸ m) : ℤ ⧸ m := x + -y
+  instance instSub {m : ℤ} : Sub (ℤ ⧸ m) where sub := ℤMod.sub
+  namespace arith
+    /-- Defining property -/
+    @[simp]
+    theorem sub_eq_add_neg {x y : ℤ ⧸ m} : x - y = x + -y := rfl
+
+    /-- Not a defining property -/
+    theorem sub_mk {m x y : ℤ} : (ℤMod.mk x : ℤ ⧸ m) - ℤMod.mk y = ℤMod.mk (x - y) := by
+      simp [neg_mk, add_mk, ℤ.results.ring.sub_eq_add_neg]
+
+    @[simp]
+    theorem sub_self {x : ℤ ⧸ m} : x - x = 0 := by simp
+    @[simp]
+    theorem sub_neg {x y : ℤ ⧸ m} : x - -y = x + y := by simp
+
+    @[simp]
+    theorem zero_sub {x : ℤ ⧸ m} : 0 - x = -x := by simp
+    @[simp]
+    theorem sub_zero {x : ℤ ⧸ m} : x - 0 = x := by simp
+    @[simp]
+    theorem neg_sub {x y : ℤ ⧸ m} : - (x - y) = y - x := by simp [add_comm]
+
+    theorem eq_of_sub_eq_zero {x y : ℤ ⧸ m} : x - y = 0 → x = y := by
+      simp
+      intro h
+      calc x
+        _ = x + (-y + y)  := by simp
+        _ = x + -y + y    := by rw [add_assoc]
+        _ = y             := by simp [h]
+
+    theorem add_sub_assoc {x y z : ℤ ⧸ m} : x + (y - z) = x + y - z := by simp
+    theorem sub_add {x y z : ℤ ⧸ m} : x - (y + z) = x - y - z := by simp
+
+    @[simp]
+    theorem mul_sub {x y z : ℤ ⧸ m} : x * (y - z) = x * y - x * z := by simp
+    @[simp]
+    theorem sub_mul {x y z : ℤ ⧸ m} : (x - y) * z = x * z - y * z := by simp
+  end arith
+
+
+
+  /- SECTION: Arithmetic homs re. coersion `ℕ → ℤ → ℤ ⧸ m`: +, (- ·), *, (· - ·) -/
+  namespace coe
+    theorem fromℤ_add_hom {m x y : ℤ} : ((x + y : ℤ) : ℤ ⧸ m) = (x : ℤ ⧸ m) + (y : ℤ ⧸ m) := rfl
+    theorem fromℤ_mul_hom {m x y : ℤ} : ((x * y : ℤ) : ℤ ⧸ m) = (x : ℤ ⧸ m) * (y : ℤ ⧸ m) := rfl
+
+    theorem fromℕ_add_hom {m : ℤ} {x y : ℕ} : ((x + y : ℕ) : ℤ ⧸ m) = (x : ℤ ⧸ m) + (y : ℤ ⧸ m) := rfl
+    theorem fromℕ_mul_hom {m : ℤ} {x y : ℕ} : ((x * y : ℕ) : ℤ ⧸ m) = (x : ℤ ⧸ m) * (y : ℤ ⧸ m) := by
+      show ℤMod.mk (ℤ.mk (x * y, 0)) = ℤMod.mk (ℤ.mk (x, 0)) * ℤMod.mk (ℤ.mk (y, 0))
+      rw [ℤ.results.coe_ℕ.coe_ℕ_hom_mul]
+      rfl
+  end coe
+
+
+
+  /- SECTION: Specialised field results modulo a *prime* -/
+  namespace arith
+    theorem nonzero_invertible_mod_prime
+      {p : ℤ} (_ : p.prime)
+      (x : ℤ ⧸ p) (_ : x ≠ 0)
+      : ∃ (y : ℤ ⧸ p), x * y = 1
+      := by
+        admit -- TODO: idea is to go via `ℤ.results.number_theory.bezout`
+  end arith
+
+  noncomputable
+  def inv {p : ℤ} {_ : p.prime} (x : ℤ ⧸ p) {_ : x ≠ 0} : ℤ ⧸ p := Classical.choose <| arith.nonzero_invertible_mod_prime ‹p.prime› x ‹x ≠ 0›
+  postfix:max "⁻¹" => inv -- FIXME: this is shit. I hate fields...
+
+  namespace arith
+    -- example {x : ℤ ⧸ p} {_ : x ≠ 0} {_ : p.prime} : ℤ ⧸ p := x⁻¹
+  end arith
+
+  -- namespace arith
+
+  -- end arith
+
 end ℤMod
 
 end Numbers

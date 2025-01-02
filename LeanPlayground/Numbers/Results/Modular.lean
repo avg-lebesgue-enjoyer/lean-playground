@@ -37,14 +37,18 @@ namespace Numbers.Modular.results
   theorem add_mk {m x y : ℤ} : (ℤMod.mk x : ℤ ⧸ m) + (ℤMod.mk y) = ℤMod.mk (x + y) := ℤMod.arith.add_mk
   theorem neg_mk {m x : ℤ} : - (ℤMod.mk x : ℤ ⧸ m) = ℤMod.mk (-x) := ℤMod.arith.neg_mk
   theorem mul_mk {m x y : ℤ} : (ℤMod.mk x : ℤ ⧸ m) * (ℤMod.mk y) = ℤMod.mk (x * y) := ℤMod.arith.mul_mk
+  theorem sub_mk {m x y : ℤ} : (ℤMod.mk x : ℤ ⧸ m) - ℤMod.mk y = ℤMod.mk (x - y) := ℤMod.arith.sub_mk
 
 
 
-  -- SECTION: Coercion `ℤ → ℤ ⧸ n`
+  -- SECTION: Coercion `ℕ → ℤ → ℤ ⧸ n`
+  namespace coe
+    theorem fromℤ_add_hom {m x y : ℤ} : ((x + y : ℤ) : ℤ ⧸ m) = (x : ℤ ⧸ m) + (y : ℤ ⧸ m) := ℤMod.coe.fromℤ_add_hom
+    theorem fromℤ_mul_hom {m x y : ℤ} : ((x * y : ℤ) : ℤ ⧸ m) = (x : ℤ ⧸ m) * (y : ℤ ⧸ m) := ℤMod.coe.fromℤ_mul_hom
 
-
-
-  -- SECTION: Coercion `ℕ ↪ ℤ ⧸ n`
+    theorem fromℕ_add_hom {m : ℤ} {x y : ℕ} : ((x + y : ℕ) : ℤ ⧸ m) = (x : ℤ ⧸ m) + (y : ℤ ⧸ m) := ℤMod.coe.fromℕ_add_hom
+    theorem fromℕ_mul_hom {m : ℤ} {x y : ℕ} : ((x * y : ℕ) : ℤ ⧸ m) = (x : ℤ ⧸ m) * (y : ℤ ⧸ m) := ℤMod.coe.fromℕ_mul_hom
+  end coe
 
 
 
@@ -73,58 +77,45 @@ namespace Numbers.Modular.results
   namespace ring
     open Numbers.ℤMod
     -- `export` the stuff from `Numbers.ℤ.results.ring.spec` into `Numbers.ℤ.results.ring`
-    -- export spec (add_assoc add_comm add_zero zero_add add_neg neg_add mul_assoc mul_comm mul_one one_mul mul_add add_mul)
+    export spec (add_assoc add_comm add_zero zero_add add_neg neg_add mul_assoc mul_comm mul_one one_mul mul_add add_mul)
 
-    -- /-- The defining property of `ℤ.mul`: it does that stuff on arguments of the form `ℤ.mk (thing : ℕ × ℕ)`. -/
-    -- theorem mul_mk {a b x y : ℕ} : (ℤ.mk (a, b)) * (ℤ.mk (x, y)) = ℤ.mk (a * x + b * y, a * y + b * x) := arith.mul_mk
-    -- /-- Not a defining property, but super useful. -/
-    -- theorem sub_mk {a b x y : ℕ} : mk (a, b) - mk (x, y) = mk (a + y, b + x) := arith.sub_mk
-
-    /-- My beloved <3, specialised to `ℤ`. (Note to self: Holds in any ring. Should generalise the proof...) -/
     theorem add_right_comm {m : ℤ} {x y : ℤ ⧸ m} (z : ℤ ⧸ m) : x + y + z = x + z + y := arith.add_right_comm z
+    theorem mul_right_comm {m : ℤ} {x y : ℤ ⧸ m} (z : ℤ ⧸ m) : x * y * z = x * z * y := arith.mul_right_comm z
 
+    theorem add_left_cancel {c x y : ℤ ⧸ m} : c + x = c + y ↔ x = y := arith.add_left_cancel
+    theorem add_right_cancel {c x y : ℤ ⧸ m} : x + c = y + c ↔ x = y := arith.add_right_cancel
+
+    theorem neg_inj {m : ℤ} {x y : ℤ ⧸ m} : -x = -y ↔ x = y := arith.neg_inj
     theorem neg_neg {m : ℤ} {x : ℤ ⧸ m} : - - x = x := arith.neg_neg
-    -- /-- Sorry, I wanted to call this `neg_add`, but I've already given that name to a more important result... -/
+    /-- Sorry, I wanted to call this `neg_add`, but I've already given that name to a more important result... -/
     theorem neg_add' {m : ℤ} {x y : ℤ ⧸ m} : - (x + y) = -x + -y := arith.neg_add'
     theorem neg_zero {m : ℤ} : - (0 : ℤ ⧸ m) = 0 := arith.neg_zero
 
-    -- /-- The defining equation for `ℤ.sub`. -/
-    -- theorem sub_eq_add_neg {x y : ℤ} : x - y = x + -y := arith.sub_eq_add_neg
-    -- theorem sub_self {x : ℤ} : x - x = 0 := arith.sub_self
-    -- theorem sub_neg {x y : ℤ} : x - -y = x + y := arith.sub_neg
-    -- theorem neg_sub {x y : ℤ} : - (x + y) = -x - y := arith.neg_sub
-    -- theorem zero_sub {x : ℤ} : 0 - x = -x := arith.zero_sub
-    -- theorem sub_zero {x : ℤ} : x - 0 = x := arith.sub_zero
-    -- theorem swap_sub {x y : ℤ} : - (x - y) = y - x := arith.swap_sub
+    theorem sub_eq_add_neg {x y : ℤ ⧸ m} : x - y = x + -y := arith.sub_eq_add_neg
+    theorem sub_self {x : ℤ ⧸ m} : x - x = 0 := arith.sub_self
+    theorem sub_neg {x y : ℤ ⧸ m} : x - -y = x + y := arith.sub_neg
+    theorem zero_sub {x : ℤ ⧸ m} : 0 - x = -x := arith.zero_sub
+    theorem sub_zero {x : ℤ ⧸ m} : x - 0 = x := arith.sub_zero
+    theorem neg_sub {x y : ℤ ⧸ m} : - (x - y) = y - x := arith.neg_sub
 
-    -- theorem eq_of_sub_eq_zero {x y : ℤ} : x - y = 0 → x = y := arith.eq_of_sub_eq_zero
-    -- theorem add_sub_assoc {x y z : ℤ} : x + (y - z) = x + y - z := arith.add_sub_assoc
-    -- theorem sub_add {x y z : ℤ} : x - (y + z) = x - y - z := arith.sub_add
+    theorem eq_of_sub_eq_zero {x y : ℤ ⧸ m} : x - y = 0 → x = y := arith.eq_of_sub_eq_zero
+    theorem add_sub_assoc {x y z : ℤ ⧸ m} : x + (y - z) = x + y - z := arith.add_sub_assoc
+    theorem sub_add {x y z : ℤ ⧸ m} : x - (y + z) = x - y - z := arith.sub_add
 
     theorem mul_zero {m : ℤ} {x : ℤ ⧸ m} : x * 0 = 0 := arith.mul_zero
     theorem zero_mul {m : ℤ} {x : ℤ ⧸ m} : 0 * x = 0 := arith.zero_mul
 
-    -- theorem mul_neg_one {x : ℤ} : x * (-1) = -x := arith.mul_neg_1
-    -- theorem neg_one_mul {x : ℤ} : (-1) * x = -x := arith.neg_1_mul
+    theorem mul_neg_one {m : ℤ} {x : ℤ ⧸ m} : x * (-1) = -x := arith.mul_neg_one
+    theorem neg_one_mul {m : ℤ} {x : ℤ ⧸ m} : (-1) * x = -x := arith.neg_one_mul
 
-    -- theorem mul_sub {a x y : ℤ} : a * (x - y) = a * x - a * y := arith.mul_sub
-    -- theorem sub_mul {a b x : ℤ} : (a - b) * x = a * x - b * x := arith.sub_mul
+    theorem mul_sub {x y z : ℤ ⧸ m} : x * (y - z) = x * y - x * z := arith.mul_sub
+    theorem sub_mul {x y z : ℤ ⧸ m} : (x - y) * z = x * z - y * z := arith.sub_mul
 
-    -- theorem neg_mul {x y : ℤ} : - (x * y) = -x * y := arith.neg_mul
-    -- theorem neg_mul_right {x y : ℤ} : - (x * y) = x * -y := arith.neg_mul_right
-    -- theorem neg_mul_neg {x y : ℤ} : (-x) * (-y) = x * y := arith.neg_mul_neg
+    theorem neg_mul {m : ℤ} {x y : ℤ ⧸ m} : -x * y = - (x * y) := arith.neg_mul
+    theorem mul_neg {m : ℤ} {x y : ℤ ⧸ m} : x * -y = - (x * y) := arith.mul_neg
+    theorem neg_mul_neg {m : ℤ} {x y : ℤ ⧸ m} : (-x) * (-y) = x * y := arith.neg_mul_neg
 
-    -- theorem eq_iff_sub_eq_zero {x y : ℤ} : x - y = 0 ↔ x = y := arith.eq_iff_sub_eq_zero
-
-    -- theorem neg_eq_comm {x y : ℤ} : -x = y ↔ -y = x := arith.neg_eq_comm
-
-    -- theorem add_left_cancel {c x y : ℤ} : c + x = c + y → x = y := arith.add_left_cancel
-    -- theorem add_right_cancel {c x y : ℤ} : x + c = y + c → x = y := arith.add_right_cancel
-
-    theorem mul_right_comm {m : ℤ} {x y : ℤ ⧸ m} (z : ℤ ⧸ m) : x * y * z = x * z * y := arith.mul_right_comm z
-
-    -- theorem neg_inj {x y : ℤ} : -x = -y ↔ x = y := arith.neg_inj
-    -- theorem neg_zero_eq_zero : - (0 : ℤ) = (0 : ℤ) := arith.neg_zero_eq_zero
+    theorem neg_eq_comm {x y : ℤ ⧸ m} : -x = y ↔ -y = x := arith.neg_eq_comm
   end ring
 
 
@@ -133,7 +124,12 @@ namespace Numbers.Modular.results
   -- The field axioms
   namespace field.spec
     -- `export` the stuff from `Numbers.ℤ.results.ring.spec` into `Numbers.ℤ.results.field.spec`
-    -- export ring.spec (add_assoc add_comm add_zero zero_add add_neg neg_add mul_assoc mul_comm mul_one one_mul mul_add add_mul)
+    export ring.spec (add_assoc add_comm add_zero zero_add add_neg neg_add mul_assoc mul_comm mul_one one_mul mul_add add_mul)
+
+    -- theorem zero_ne_one {p : ℤ} {_ : p.prime} : (0 : ℤ ⧸ p) ≠ (1 : ℤ ⧸ p) := sorry
+
+    -- theorem mul_inv {p : ℤ} {_ : p.prime} {x : ℤ ⧸ m} {_ : x ≠ 0} : x * x⁻¹ = 1 := sorry
+    -- theorem inv_mul {p : ℤ} {_ : p.prime} {x : ℤ ⧸ m} {_ : x ≠ 0} : x⁻¹ * x = 1 := sorry
   end field.spec
 
   -- More results
@@ -144,8 +140,6 @@ namespace Numbers.Modular.results
 
 
   /- SECTION: Results yet to be proven
-    [1.] Ring results
-      Prove everything that's there
     [2.] Field results
       Including and *especially* the null factor law.
       ^^ interpret this as `p ∣ (a * b) → p ∣ a ∨ p ∣ b` too
