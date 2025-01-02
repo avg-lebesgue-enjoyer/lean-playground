@@ -190,7 +190,6 @@ namespace ℤMod
   instance instAdd {m : ℤ} : Add (ℤ ⧸ m) where add := ℤMod.add
   namespace arith
     /-- Defining rule -/
-    @[simp]
     theorem add_mk {m x y : ℤ} : (ℤMod.mk x : ℤ ⧸ m) + (ℤMod.mk y) = ℤMod.mk (x + y) := rfl
 
     @[simp]
@@ -204,6 +203,9 @@ namespace ℤMod
       apply x.indOn ; intro x'
       apply y.indOn ; intro y'
       simp [add_mk, ℤ.results.ring.spec.add_comm]
+
+    theorem add_right_comm {m : ℤ} {x y : ℤ ⧸ m} (z : ℤ ⧸ m) : x + y + z = x + z + y := by
+      rw [← add_assoc, add_comm y, add_assoc]
 
     @[simp]
     theorem add_zero {m : ℤ} {x : ℤ ⧸ m} : x + 0 = x := by
@@ -231,7 +233,6 @@ namespace ℤMod
   instance instNeg {m : ℤ} : Neg (ℤ ⧸ m) where neg := ℤMod.neg
   namespace arith
     /-- Defining property -/
-    @[simp]
     theorem neg_mk {m x : ℤ} : - (ℤMod.mk x : ℤ ⧸ m) = ℤMod.mk (-x) := rfl
 
     @[simp]
@@ -255,14 +256,68 @@ namespace ℤMod
       simp [add_mk, neg_mk, ℤ.results.ring.neg_add']
     @[simp]
     theorem neg_zero {m : ℤ} : - (0 : ℤ ⧸ m) = 0 := by
-      simp [←ntn_zero, ℤ.results.ring.neg_zero]
+      simp [←ntn_zero, neg_mk, ℤ.results.ring.neg_zero]
   end arith
 
 
 
   /- SECTION: Multiplication: definition, assoc, comm, * 1, 1 *  -/
-  def mul : (ℤ ⧸ m) → (ℤ ⧸ m) → (ℤ ⧸ m) :=
-    ℤ
+  def mul {m : ℤ} : (ℤ ⧸ m) → (ℤ ⧸ m) → (ℤ ⧸ m) :=
+    let mul₁₂ (a b : ℤ) : ℤ ⧸ m := a * b -- coe
+    have mul₁₂_respects (a b c : ℤ) : same_remainder m b c → mul₁₂ a b = mul₁₂ a c := by
+      intro (h : m ∣ c - b)
+      apply ℤMod.sound
+      show m ∣ a * c - a * b
+      rw [← ℤ.results.ring.mul_sub]
+      apply ℤ.results.number_theory.divides_mul_right
+      assumption
+    let mul₁ (a : ℤ) : (ℤ ⧸ m) → (ℤ ⧸ m) := ℤMod.lift (mul₁₂ a) (mul₁₂_respects a)
+    have mul₁_respects (a b : ℤ) : same_remainder m a b → mul₁ a = mul₁ b := by
+      intro (h : m ∣ b - a)
+      apply funext ; intro z ; apply z.indOn ; intro c
+      show mul₁₂ a c = mul₁₂ b c
+      apply ℤMod.sound
+      show m ∣ b * c - a * c
+      rw [← ℤ.results.ring.sub_mul]
+      apply ℤ.results.number_theory.divides_mul
+      assumption
+    ℤMod.lift mul₁ mul₁_respects
+  instance instMul {m : ℤ} : Mul (ℤ ⧸ m) where mul := ℤMod.mul
+  namespace arith
+    /-- Defining property -/
+    theorem mul_mk {m x y : ℤ} : (ℤMod.mk x : ℤ ⧸ m) * (ℤMod.mk y) = ℤMod.mk (x * y) := rfl
+
+    @[simp]
+    theorem mul_assoc {m : ℤ} {x y z : ℤ ⧸ m} : x * (y * z) = (x * y) * z := by
+      apply x.indOn ; intro a
+      apply y.indOn ; intro b
+      apply z.indOn ; intro c
+      simp [mul_mk, ℤ.results.ring.spec.mul_assoc]
+
+    theorem mul_comm {m : ℤ} (x y : ℤ ⧸ m) : x * y = y * x := by
+      apply x.indOn ; intro a
+      apply y.indOn ; intro b
+      simp [mul_mk, ℤ.results.ring.spec.mul_comm]
+
+    theorem mul_right_comm {m : ℤ} {x y : ℤ ⧸ m} (z : ℤ ⧸ m) : x * y * z = x * z * y := by
+      rw [← mul_assoc, mul_comm y, mul_assoc]
+
+    @[simp]
+    theorem mul_one {m : ℤ} {x : ℤ ⧸ m} : x * 1 = x := by
+      apply x.indOn ; intro a
+      simp [← ntn_one, mul_mk, ℤ.results.ring.spec.mul_one]
+    @[simp]
+    theorem one_mul {m : ℤ} {x : ℤ ⧸ m} : 1 * x = x := by
+      simp [mul_comm]
+
+    @[simp]
+    theorem mul_zero {m : ℤ} {x : ℤ ⧸ m} : x * 0 = 0 := by
+      apply x.indOn ; intro a
+      simp [← ntn_zero, mul_mk, ℤ.results.ring.mul_zero]
+    @[simp]
+    theorem zero_mul {m : ℤ} {x : ℤ ⧸ m} : 0 * x = 0 := by
+      simp [mul_comm]
+  end arith
 
 
 

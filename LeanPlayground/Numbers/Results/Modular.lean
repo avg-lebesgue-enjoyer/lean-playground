@@ -36,7 +36,7 @@ namespace Numbers.Modular.results
   theorem ntn_one {m : ℤ} : (ℤMod.mk 1 : ℤ ⧸ m) = 1 := ℤMod.ntn_one
   theorem add_mk {m x y : ℤ} : (ℤMod.mk x : ℤ ⧸ m) + (ℤMod.mk y) = ℤMod.mk (x + y) := ℤMod.arith.add_mk
   theorem neg_mk {m x : ℤ} : - (ℤMod.mk x : ℤ ⧸ m) = ℤMod.mk (-x) := ℤMod.arith.neg_mk
-
+  theorem mul_mk {m x y : ℤ} : (ℤMod.mk x : ℤ ⧸ m) * (ℤMod.mk y) = ℤMod.mk (x * y) := ℤMod.arith.mul_mk
 
 
 
@@ -60,10 +60,10 @@ namespace Numbers.Modular.results
     theorem add_neg {m : ℤ} {x : ℤ ⧸ m} : x + -x = 0 := arith.add_neg
     theorem neg_add {m : ℤ} {x : ℤ ⧸ m} : -x + x = 0 := arith.neg_add
     -- Multiplicative commutative monoid
-    -- theorem mul_assoc {x y z : ℤ} : x * (y * z) = (x * y) * z := arith.mul_assoc
-    -- theorem mul_comm (x y : ℤ) : x * y = y * x := arith.mul_comm x y
-    -- theorem mul_one {x : ℤ} : x * 1 = x := arith.mul_one
-    -- theorem one_mul {x : ℤ} : 1 * x = x := arith.one_mul
+    theorem mul_assoc {m : ℤ} {x y z : ℤ ⧸ m} : x * (y * z) = (x * y) * z := arith.mul_assoc
+    theorem mul_comm {m : ℤ} (x y : ℤ ⧸ m) : x * y = y * x := arith.mul_comm x y
+    theorem mul_one {m : ℤ} {x : ℤ ⧸ m} : x * 1 = x := arith.mul_one
+    theorem one_mul {m : ℤ} {x : ℤ ⧸ m} : 1 * x = x := arith.one_mul
     -- -- Distributivity
     -- theorem mul_add {a x y : ℤ} : a * (x + y) = a * x + a * y := arith.mul_add
     -- theorem add_mul {a b x : ℤ} : (a + b) * x = a * x + b * x := arith.add_mul
@@ -80,8 +80,8 @@ namespace Numbers.Modular.results
     -- /-- Not a defining property, but super useful. -/
     -- theorem sub_mk {a b x y : ℕ} : mk (a, b) - mk (x, y) = mk (a + y, b + x) := arith.sub_mk
 
-    -- /-- My beloved <3, specialised to `ℤ`. (Note to self: Holds in any ring. Should generalise the proof...) -/
-    -- theorem add_right_comm {x y : ℤ} (z : ℤ) : x + y + z = x + z + y := arith.add_right_comm z
+    /-- My beloved <3, specialised to `ℤ`. (Note to self: Holds in any ring. Should generalise the proof...) -/
+    theorem add_right_comm {m : ℤ} {x y : ℤ ⧸ m} (z : ℤ ⧸ m) : x + y + z = x + z + y := arith.add_right_comm z
 
     theorem neg_neg {m : ℤ} {x : ℤ ⧸ m} : - - x = x := arith.neg_neg
     -- /-- Sorry, I wanted to call this `neg_add`, but I've already given that name to a more important result... -/
@@ -121,7 +121,7 @@ namespace Numbers.Modular.results
     -- theorem add_left_cancel {c x y : ℤ} : c + x = c + y → x = y := arith.add_left_cancel
     -- theorem add_right_cancel {c x y : ℤ} : x + c = y + c → x = y := arith.add_right_cancel
 
-    -- theorem mul_right_comm {x y : ℤ} (z : ℤ) : x * y * z = x * z * y := arith.mul_right_comm z
+    theorem mul_right_comm {m : ℤ} {x y : ℤ ⧸ m} (z : ℤ ⧸ m) : x * y * z = x * z * y := arith.mul_right_comm z
 
     -- theorem neg_inj {x y : ℤ} : -x = -y ↔ x = y := arith.neg_inj
     -- theorem neg_zero_eq_zero : - (0 : ℤ) = (0 : ℤ) := arith.neg_zero_eq_zero
