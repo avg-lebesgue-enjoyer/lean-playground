@@ -261,7 +261,7 @@ namespace ℤMod
 
 
 
-  /- SECTION: Multiplication: definition, assoc, comm, * 1, 1 *  -/
+  /- SECTION: Multiplication: definition, assoc, comm, * 1, 1 *, * 0, 0 *  -/
   def mul {m : ℤ} : (ℤ ⧸ m) → (ℤ ⧸ m) → (ℤ ⧸ m) :=
     let mul₁₂ (a b : ℤ) : ℤ ⧸ m := a * b -- coe
     have mul₁₂_respects (a b c : ℤ) : same_remainder m b c → mul₁₂ a b = mul₁₂ a c := by
@@ -316,6 +316,21 @@ namespace ℤMod
       simp [← ntn_zero, mul_mk, ℤ.results.ring.mul_zero]
     @[simp]
     theorem zero_mul {m : ℤ} {x : ℤ ⧸ m} : 0 * x = 0 := by
+      simp [mul_comm]
+  end arith
+
+
+
+  /- SECTION: Distributivity -/
+  namespace arith
+    @[simp]
+    theorem mul_add {m : ℤ} {x y z : ℤ ⧸ m} : x * (y + z) = x * y + x * z := by
+      apply x.indOn ; intro a
+      apply y.indOn ; intro b
+      apply z.indOn ; intro c
+      simp [add_mk, mul_mk, ℤ.results.ring.spec.mul_add]
+    @[simp]
+    theorem add_mul {m : ℤ} {x y z : ℤ ⧸ m} : (x + y) * z = x * z + y * z := by
       simp [mul_comm]
   end arith
 

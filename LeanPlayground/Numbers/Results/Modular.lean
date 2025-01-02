@@ -64,9 +64,9 @@ namespace Numbers.Modular.results
     theorem mul_comm {m : ℤ} (x y : ℤ ⧸ m) : x * y = y * x := arith.mul_comm x y
     theorem mul_one {m : ℤ} {x : ℤ ⧸ m} : x * 1 = x := arith.mul_one
     theorem one_mul {m : ℤ} {x : ℤ ⧸ m} : 1 * x = x := arith.one_mul
-    -- -- Distributivity
-    -- theorem mul_add {a x y : ℤ} : a * (x + y) = a * x + a * y := arith.mul_add
-    -- theorem add_mul {a b x : ℤ} : (a + b) * x = a * x + b * x := arith.add_mul
+    -- Distributivity
+    theorem mul_add {m : ℤ} {x y z : ℤ ⧸ m} : x * (y + z) = x * y + x * z := arith.mul_add
+    theorem add_mul {m : ℤ} {x y z : ℤ ⧸ m} : (x + y) * z = x * z + y * z := arith.add_mul
   end ring.spec
 
   -- More results
@@ -101,8 +101,8 @@ namespace Numbers.Modular.results
     -- theorem add_sub_assoc {x y z : ℤ} : x + (y - z) = x + y - z := arith.add_sub_assoc
     -- theorem sub_add {x y z : ℤ} : x - (y + z) = x - y - z := arith.sub_add
 
-    -- theorem mul_zero {x : ℤ} : x * 0 = 0 := arith.mul_zero
-    -- theorem zero_mul {x : ℤ} : 0 * x = 0 := arith.zero_mul
+    theorem mul_zero {m : ℤ} {x : ℤ ⧸ m} : x * 0 = 0 := arith.mul_zero
+    theorem zero_mul {m : ℤ} {x : ℤ ⧸ m} : 0 * x = 0 := arith.zero_mul
 
     -- theorem mul_neg_one {x : ℤ} : x * (-1) = -x := arith.mul_neg_1
     -- theorem neg_one_mul {x : ℤ} : (-1) * x = -x := arith.neg_1_mul
