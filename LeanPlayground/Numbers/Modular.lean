@@ -146,7 +146,128 @@ instance {m : ℤ} : OfNat (@ℤMod m) 1 where ofNat := ℤMod.mk 1
 
 
 namespace ℤMod
-  -- TODO: More results
+  /- SECTION: Notation `0` and `1` -/
+  theorem ntn_zero {m : ℤ} : (ℤMod.mk 0 : ℤ ⧸ m) = 0 := rfl
+  theorem ntn_one {m : ℤ} : (ℤMod.mk 1 : ℤ ⧸ m) = 1 := rfl
+
+
+
+  /- SECTION: Coersion `ℕ → ℤ → ℤ ⧸ m` -/
+  section coe
+    instance fromℤ {m : ℤ} : Coe ℤ (ℤ ⧸ m) where coe := ℤMod.mk
+    instance fromℕ {m : ℤ} : Coe ℕ (ℤ ⧸ m) where coe := fromℤ.coe ∘ ℤ.coe_from_ℕ.it.coe
+  end coe
+
+
+
+  /- SECTION: Addition: definition, assoc, comm, + 0, 0 + -/
+  def add {m : ℤ} : (ℤ ⧸ m) → (ℤ ⧸ m) → (ℤ ⧸ m) :=
+    let add₁₂ (x y : ℤ) : ℤ ⧸ m := ℤMod.mk (x + y)
+    have add₁₂_respects (x : ℤ) : ∀ (y z : ℤ), same_remainder m y z → add₁₂ x y = add₁₂ x z := by
+      intro y z (h : m ∣ z - y)
+      unfold add₁₂
+      apply ℤMod.sound
+      show m ∣ (x + z) - (x + y)
+      open ℤ.results.ring in
+      rw [sub_eq_add_neg, neg_add', add_assoc, add_right_comm (-x), add_neg, zero_add, sub_eq_add_neg.symm]
+      assumption
+    let add₁ (x : ℤ) : (ℤ ⧸ m) → (ℤ ⧸ m) := ℤMod.lift (add₁₂ x) (add₁₂_respects x)
+    have add₁_respects : ∀ (x y : ℤ), same_remainder m x y → add₁ x = add₁ y := by
+      intro x y (h : m ∣ y - x)
+      have h_ligma : add₁₂ x = add₁₂ y := by
+        apply funext ; intro z
+        unfold add₁₂
+        apply ℤMod.sound
+        show m ∣ (y + z) - (x + z)
+        open ℤ.results.ring in
+        rw [sub_eq_add_neg, neg_add', add_assoc, add_right_comm, ←add_assoc (z := -z), add_neg, add_zero, ←sub_eq_add_neg]
+        assumption
+      apply funext ; intro z' ; apply z'.indOn ; intro z
+      unfold add₁
+      show add₁₂ x z = add₁₂ y z
+      rw [‹add₁₂ x = add₁₂ y›]
+    ℤMod.lift add₁ add₁_respects
+  instance instAdd {m : ℤ} : Add (ℤ ⧸ m) where add := ℤMod.add
+  namespace arith
+    /-- Defining rule -/
+    @[simp]
+    theorem add_mk {m x y : ℤ} : (ℤMod.mk x : ℤ ⧸ m) + (ℤMod.mk y) = ℤMod.mk (x + y) := rfl
+
+    @[simp]
+    theorem add_assoc {m : ℤ} {x y z : ℤ ⧸ m} : x + (y + z) = (x + y) + z := by
+      apply x.indOn ; intro x'
+      apply y.indOn ; intro y'
+      apply z.indOn ; intro z'
+      simp [add_mk, ℤ.results.ring.spec.add_assoc]
+
+    theorem add_comm {m : ℤ} (x y : ℤ ⧸ m) : x + y = y + x := by
+      apply x.indOn ; intro x'
+      apply y.indOn ; intro y'
+      simp [add_mk, ℤ.results.ring.spec.add_comm]
+
+    @[simp]
+    theorem add_zero {m : ℤ} {x : ℤ ⧸ m} : x + 0 = x := by
+      apply x.indOn ; intro x'
+      simp [←ntn_zero, add_mk, ℤ.results.ring.spec.add_zero]
+    @[simp]
+    theorem zero_add {m : ℤ} {x : ℤ ⧸ m} : 0 + x = x := by
+      rw [add_comm]
+      exact add_zero
+  end arith
+
+
+
+  /- SECTION: Negation: definition, other cool stuff -/
+  def neg {m : ℤ} : (ℤ ⧸ m) → (ℤ ⧸ m) :=
+    let neg₁ (x : ℤ) : ℤ ⧸ m := ℤMod.mk (-x)
+    have neg₁_respects : ∀ (x y : ℤ), same_remainder m x y → neg₁ x = neg₁ y := by
+      intro x y (_ : m ∣ y - x)
+      unfold neg₁ ; apply ℤMod.sound
+      show m ∣ (-y) - (-x)
+      open ℤ.results.ring in
+      rw [sub_neg, ←ℤ.results.number_theory.divides_iff_divides_neg, neg_add', neg_neg, ←sub_eq_add_neg]
+      assumption
+    ℤMod.lift neg₁ neg₁_respects
+  instance instNeg {m : ℤ} : Neg (ℤ ⧸ m) where neg := ℤMod.neg
+  namespace arith
+    /-- Defining property -/
+    @[simp]
+    theorem neg_mk {m x : ℤ} : - (ℤMod.mk x : ℤ ⧸ m) = ℤMod.mk (-x) := rfl
+
+    @[simp]
+    theorem neg_neg {m : ℤ} {x : ℤ ⧸ m} : - - x = x := by
+      apply x.indOn ; intro x'
+      simp [neg_mk, ℤ.results.ring.neg_neg]
+
+    @[simp]
+    theorem add_neg {m : ℤ} {x : ℤ ⧸ m} : x + -x = 0 := by
+      apply x.indOn ; intro x'
+      simp [neg_mk, add_mk, ℤ.results.ring.spec.add_neg, ntn_zero]
+    @[simp]
+    theorem neg_add {m : ℤ} {x : ℤ ⧸ m} : -x + x = 0 := by
+      rw [add_comm]
+      exact add_neg
+
+    @[simp]
+    theorem neg_add' {m : ℤ} {x y : ℤ ⧸ m} : - (x + y) = -x + -y := by
+      apply x.indOn ; intro x'
+      apply y.indOn ; intro y'
+      simp [add_mk, neg_mk, ℤ.results.ring.neg_add']
+    @[simp]
+    theorem neg_zero {m : ℤ} : - (0 : ℤ ⧸ m) = 0 := by
+      simp [←ntn_zero, ℤ.results.ring.neg_zero]
+  end arith
+
+
+
+  /- SECTION: Multiplication: definition, assoc, comm, * 1, 1 *  -/
+  def mul : (ℤ ⧸ m) → (ℤ ⧸ m) → (ℤ ⧸ m) :=
+    ℤ
+
+
+
+
+  /- SECTION: Arithmetic homs re. coersion `ℕ → ℤ → ℤ ⧸ m` -/
 end ℤMod
 
 end Numbers
