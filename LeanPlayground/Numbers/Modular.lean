@@ -483,10 +483,16 @@ namespace ℤMod
   namespace arith
     /-- FIXME: Prove this!! -/
     theorem nonzero_invertible_mod_prime
-      {p : ℤ} (_ : p.prime)
-      (x : ℤ ⧸ p) (_ : x ≠ 0)
+      {p : ℕ} (h_p_prime : (p : ℤ).prime)
+      (x : ℤ ⧸ p) (h_x_ne_zero : x ≠ 0)
       : ∃ (y : ℤ ⧸ p), x * y = 1
       := by
+        have : p ≠ 0 := by
+          intro h_p_eq_0
+          rw [‹p = 0›, ℤ.ntn_zero] at h_p_prime
+          have : (0 : ℤ) > 1 := h_p_prime.left
+          admit -- show a contradiction
+        have := x.existsCanonRep ‹p ≠ 0›
         admit -- TODO: idea is to go via `ℤ.results.number_theory.bezout` on a *canonical* representative (proving coprimality should be easier)
   end arith
 

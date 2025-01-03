@@ -45,7 +45,7 @@ namespace Numbers.ℤ.results
 
   -- SECTION: Notation
   /-- The canonical quotient map for `ℤ := ℕ × ℕ ⧸ same_difference`. -/
-  def ℤ.mk : ℕ × ℕ → ℤ := Numbers.ℤ.mk
+  -- def ℤ.mk : ℕ × ℕ → ℤ := Numbers.ℤ.mk
   theorem add_ntn {x y : ℤ} : x.add y = x + y := rfl
   theorem mul_ntn {x y : ℤ} : x.mul y = x * y := rfl
   theorem le_ntn {x y : ℤ} : x.le y = (x ≤ y) := rfl
