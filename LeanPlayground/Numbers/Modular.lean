@@ -483,7 +483,6 @@ namespace ℤMod
 
   /- SECTION: Specialised field results modulo a *prime* -/
   section da_field
-  variable {p : ℕ} {_ : (p : ℤ).prime}
 
   namespace arith
     /-- NOTE: This proof is disgusting. It would be a lot more cleaner if I had developed the theory of `ℤ` a bit better first. -/
@@ -555,30 +554,60 @@ namespace ℤMod
   /-- NOTE: This could've been a computable function if I had properly done the extended Euclidean algorithm. -/
   noncomputable
   def inv {p : ℕ} {_ : (p : ℤ).prime} (x : ℤ ⧸ p) {_ : x ≠ 0} : ℤ ⧸ p := Classical.choose <| arith.nonzero_invertible_mod_prime ‹(p : ℤ).prime› x ‹x ≠ 0›
-  set_option quotPrecheck false
-  notation:max x "⁻¹" => @inv p ‹(p : ℤ).prime› x ‹x ≠ 0› -- this is kinda a hack...
-  set_option quotPrecheck true
+  def inv_spec {p : ℕ} {_ : (p : ℤ).prime} (x : ℤ ⧸ p) {_ : x ≠ 0} : x * (@inv p (by assumption) x (by assumption)) = 1 := Classical.choose_spec <| arith.nonzero_invertible_mod_prime ‹(p : ℤ).prime› x ‹x ≠ 0›
+
+  notation:max x "⁻¹" => @inv _ (by assumption) x (by assumption) -- this is kinda a hack...
 
   namespace arith
-    theorem zero_ne_one {p : ℤ} {_ : p.prime} : (0 : ℤ ⧸ p) ≠ (1 : ℤ ⧸ p) := by
+    -- NOTE: Field axiom
+    theorem zero_ne_one {_ : (p : ℤ).prime} : (0 : ℤ ⧸ p) ≠ (1 : ℤ ⧸ p) := by
       rw [← ntn_zero, ← ntn_one]
       intro h_0_eq_q
-      have : p ∣ 1 - 0 := h_0_eq_q |> ℤMod.exact
-      have : p ∣ 1 := by rw [ℤ.results.ring.sub_zero] at this ; assumption
+      have : (p : ℤ) ∣ 1 - 0 := h_0_eq_q |> ℤMod.exact
+      have : (p : ℤ) ∣ 1 := by rw [ℤ.results.ring.sub_zero] at this ; assumption
       have := ℤ.results.number_theory.unit_of_divides_unit ℤ.results.ring.one_invertible this |> ℤ.results.ring.solve_invertible
       cases this
       case inl h_p_eq_1 =>
-        have := ‹p.prime›.left
+        have := ‹(p : ℤ).prime›.left
         rw [h_p_eq_1, gt_iff_lt] at this
         have := ℤ.results.ordered_ring.lt_irrefl 1
         contradiction -- `1 < 1` and `¬ (1 < 1)`
       case inr h_p_eq_neg_1 =>
-        have := ‹p.prime›.left
+        have := ‹(p : ℤ).prime›.left
         rw [h_p_eq_neg_1, gt_iff_lt, ℤ.results.ordered_ring.lt_mk] at this
         have ⟨a, h_a, h_a_ne_0⟩ := this
         rw [← ℤ.ntn_one, ℤ.results.ring.neg_mk, ℤ.results.ring.sub_mk] at h_a
         have : a = 0 := h_a |> ℤ.exact |> Eq.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
         contradiction -- `a = 0` and `a ≠ 0`
+    -- NOTE: Field axiom
+    @[simp]
+    theorem mul_inv {p : ℕ} {_ : (p : ℤ).prime} {x : ℤ ⧸ p} {_ : x ≠ 0} : x * x⁻¹ = (1 : ℤ ⧸ p) := @inv_spec p ‹(p : ℤ).prime› x ‹x ≠ 0›
+    -- NOTE: Field axiom
+    @[simp]
+    theorem inv_mul {p : ℕ} {_ : (p : ℤ).prime} {x : ℤ ⧸ p} {_ : x ≠ 0} : x⁻¹ * x = (1 : ℤ ⧸ p) := by
+      rw [mul_comm]
+      exact mul_inv
+
+    theorem null_factor {p : ℕ} {_ : (p : ℤ).prime} {x y : ℤ ⧸ p} : x * y = 0 ↔ x = 0 ∨ y = 0 := by
+      constructor
+      case mpr =>
+        intro h ; cases h
+        <;> (rename_i h ; simp [h])
+      case mp =>
+        intro h
+        apply Classical.byContradiction
+        rw [not_or, ←ne_eq, ←ne_eq]
+        intro ⟨_, _⟩
+        have : y = 0 := calc y
+          _ = x⁻¹ * (x * y) := by simp
+          _ = x⁻¹ * 0       := by rw [h]
+          _ = 0             := by rw [mul_zero]
+        contradiction -- `y = 0` and `y ≠ 0`
+
+    theorem null_factor_divisibility {p : ℕ} {_ : (p : ℤ).prime} {x y : ℤ} : p ∣ (x * y) ↔ (p ∣ x) ∨ (p ∣ y) := by
+      repeat rw [←eq_zero_iff_multiple]
+      rw [coe.fromℤ_mul_hom]
+      exact @null_factor p ‹(p : ℤ).prime› (x := mk x) (y := mk y)
   end arith
   end da_field
 

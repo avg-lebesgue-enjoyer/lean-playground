@@ -130,24 +130,23 @@ namespace Numbers.Modular.results
     -- `export` the stuff from `Numbers.ℤ.results.ring.spec` into `Numbers.ℤ.results.field.spec`
     export ring.spec (add_assoc add_comm add_zero zero_add add_neg neg_add mul_assoc mul_comm mul_one one_mul mul_add add_mul)
 
-    theorem zero_ne_one {p : ℤ} {_ : p.prime} : (0 : ℤ ⧸ p) ≠ (1 : ℤ ⧸ p) := @arith.zero_ne_one p ‹p.prime›
+    theorem zero_ne_one {p : ℕ} {_ : (p : ℤ).prime} : (0 : ℤ ⧸ p) ≠ (1 : ℤ ⧸ p) := @arith.zero_ne_one p ‹(p : ℤ).prime›
 
-    -- theorem mul_inv {p : ℤ} {_ : p.prime} {x : ℤ ⧸ m} {_ : x ≠ 0} : x * x⁻¹ = 1 := sorry
-    -- theorem inv_mul {p : ℤ} {_ : p.prime} {x : ℤ ⧸ m} {_ : x ≠ 0} : x⁻¹ * x = 1 := sorry
+    theorem mul_inv {p : ℕ} {_ : (p : ℤ).prime} {x : ℤ ⧸ p} {_ : x ≠ 0} : x * x⁻¹ = (1 : ℤ ⧸ p) := arith.mul_inv
+    theorem inv_mul {p : ℕ} {_ : (p : ℤ).prime} {x : ℤ ⧸ p} {_ : x ≠ 0} : x⁻¹ * x = (1 : ℤ ⧸ p) := arith.inv_mul
   end field.spec
 
   -- More results
   namespace field
-    -- theorem null_factor {p : ℤ} {_ : p.prime} {x y : ℤ ⧸ p} : x * y = 0 ↔ x = 0 ∨ y = 0 := sorry
-    -- theorem null_factor_divisibility {p : ℤ} {_ : p.prime} {x y : ℤ} : p ∣ (x * y) ↔ (p ∣ x) ∨ (p ∣ y) := sorry
+    open Numbers.ℤMod
+
+    theorem null_factor {p : ℕ} {_ : (p : ℤ).prime} {x y : ℤ ⧸ p} : x * y = 0 ↔ x = 0 ∨ y = 0 := @arith.null_factor p ‹(p : ℤ).prime› x y
+    theorem null_factor_divisibility {p : ℕ} {_ : (p : ℤ).prime} {x y : ℤ} : p ∣ (x * y) ↔ (p ∣ x) ∨ (p ∣ y) := @arith.null_factor_divisibility p ‹(p : ℤ).prime› x y
   end field
 
 
 
   /- SECTION: Results yet to be proven
-    [2.] Field results
-      Including and *especially* the null factor law.
-      ^^ interpret this as `p ∣ (a * b) → p ∣ a ∨ p ∣ b` too
     [3.] Future horizons
       Move to a new file, called `FundArith.lean`, and prove that theorem
   -/
