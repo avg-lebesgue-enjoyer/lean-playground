@@ -144,11 +144,4 @@ namespace Numbers.Modular.results
     theorem null_factor_divisibility {p : ℕ} {_ : (p : ℤ).prime} {x y : ℤ} : p ∣ (x * y) ↔ (p ∣ x) ∨ (p ∣ y) := @arith.null_factor_divisibility p ‹(p : ℤ).prime› x y
   end field
 
-
-
-  /- SECTION: Results yet to be proven
-    [3.] Future horizons
-      Move to a new file, called `FundArith.lean`, and prove that theorem
-  -/
-
 end Numbers.Modular.results
