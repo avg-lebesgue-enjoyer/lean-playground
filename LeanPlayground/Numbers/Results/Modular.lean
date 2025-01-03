@@ -126,10 +126,11 @@ namespace Numbers.Modular.results
   -- SECTION: The field `ℤ ⧸ p` of integers modulo a prime
   -- The field axioms
   namespace field.spec
+    open Numbers.ℤMod
     -- `export` the stuff from `Numbers.ℤ.results.ring.spec` into `Numbers.ℤ.results.field.spec`
     export ring.spec (add_assoc add_comm add_zero zero_add add_neg neg_add mul_assoc mul_comm mul_one one_mul mul_add add_mul)
 
-    -- theorem zero_ne_one {p : ℤ} {_ : p.prime} : (0 : ℤ ⧸ p) ≠ (1 : ℤ ⧸ p) := sorry
+    theorem zero_ne_one {p : ℤ} {_ : p.prime} : (0 : ℤ ⧸ p) ≠ (1 : ℤ ⧸ p) := @arith.zero_ne_one p ‹p.prime›
 
     -- theorem mul_inv {p : ℤ} {_ : p.prime} {x : ℤ ⧸ m} {_ : x ≠ 0} : x * x⁻¹ = 1 := sorry
     -- theorem inv_mul {p : ℤ} {_ : p.prime} {x : ℤ ⧸ m} {_ : x ≠ 0} : x⁻¹ * x = 1 := sorry

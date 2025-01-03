@@ -560,7 +560,25 @@ namespace ℤMod
   set_option quotPrecheck true
 
   namespace arith
-    -- Sigma
+    theorem zero_ne_one {p : ℤ} {_ : p.prime} : (0 : ℤ ⧸ p) ≠ (1 : ℤ ⧸ p) := by
+      rw [← ntn_zero, ← ntn_one]
+      intro h_0_eq_q
+      have : p ∣ 1 - 0 := h_0_eq_q |> ℤMod.exact
+      have : p ∣ 1 := by rw [ℤ.results.ring.sub_zero] at this ; assumption
+      have := ℤ.results.number_theory.unit_of_divides_unit ℤ.results.ring.one_invertible this |> ℤ.results.ring.solve_invertible
+      cases this
+      case inl h_p_eq_1 =>
+        have := ‹p.prime›.left
+        rw [h_p_eq_1, gt_iff_lt] at this
+        have := ℤ.results.ordered_ring.lt_irrefl 1
+        contradiction -- `1 < 1` and `¬ (1 < 1)`
+      case inr h_p_eq_neg_1 =>
+        have := ‹p.prime›.left
+        rw [h_p_eq_neg_1, gt_iff_lt, ℤ.results.ordered_ring.lt_mk] at this
+        have ⟨a, h_a, h_a_ne_0⟩ := this
+        rw [← ℤ.ntn_one, ℤ.results.ring.neg_mk, ℤ.results.ring.sub_mk] at h_a
+        have : a = 0 := h_a |> ℤ.exact |> Eq.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+        contradiction -- `a = 0` and `a ≠ 0`
   end arith
   end da_field
 
