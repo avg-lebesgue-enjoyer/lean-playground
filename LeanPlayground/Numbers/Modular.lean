@@ -464,7 +464,7 @@ namespace ℤMod
 
 
 
-  /- SECTION: ⟦x⟧ = 0 ↔ m ∣ x -/
+  /- SECTION: ⟦x⟧ = 0 ↔ m ∣ x and its special case ⟦m⟧ = 0 -/
   namespace arith
     theorem eq_zero_iff_multiple {x : ℤ} : (x : ℤ ⧸ m) = (0 : ℤ ⧸ m) ↔ m ∣ x := by
       rw  [ ←ntn_zero
@@ -472,16 +472,21 @@ namespace ℤMod
           , same_remainder
           , ℤ.results.ring.zero_sub
           , ℤ.results.number_theory.divides_iff_divides_neg]
+
+    @[simp]
+    theorem modulus_eq_zero {m : ℤ} : (m : ℤ ⧸ m) = (0 : ℤ ⧸ m) := by
+      rw [eq_zero_iff_multiple]
+      exact ℤ.results.number_theory.divides_refl m
   end arith
 
 
 
   /- SECTION: Specialised field results modulo a *prime* -/
   section da_field
-  variable {p : ℤ} {_ : p.prime}
+  variable {p : ℕ} {_ : (p : ℤ).prime}
 
   namespace arith
-    /-- FIXME: Prove this!! -/
+    /-- NOTE: This proof is disgusting. It would be a lot more cleaner if I had developed the theory of `ℤ` a bit better first. -/
     theorem nonzero_invertible_mod_prime
       {p : ℕ} (h_p_prime : (p : ℤ).prime)
       (x : ℤ ⧸ p) (h_x_ne_zero : x ≠ 0)
@@ -491,21 +496,71 @@ namespace ℤMod
           intro h_p_eq_0
           rw [‹p = 0›, ℤ.ntn_zero] at h_p_prime
           have : (0 : ℤ) > 1 := h_p_prime.left
-          admit -- show a contradiction
-        have := x.existsCanonRep ‹p ≠ 0›
-        admit -- TODO: idea is to go via `ℤ.results.number_theory.bezout` on a *canonical* representative (proving coprimality should be easier)
+          rw [gt_iff_lt, ℤ.results.ordered_ring.lt_mk, ℤ.results.ring.zero_sub, ←ℤ.ntn_one, ℤ.results.ring.neg_mk] at this
+          have ⟨a, h_a, h_a_ne_0⟩ := this
+          have h_a := h_a |> ℤ.exact |> Eq.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+          contradiction -- `a = 0` and `a ≠ 0`
+        have ⟨r, h_r, h_r_lt_p⟩ := x.existsCanonRep ‹p ≠ 0›
+        have h_r_ne_0 : r ≠ 0 := by
+          intro h_r_eq_0
+          rw [h_r_eq_0, ℤ.ntn_zero, ntn_zero] at h_r
+          contradiction -- `x = 0` and `x ≠ 0`
+        have h_r_gt_0 : (r : ℤ) > 0 := by
+          rw [gt_iff_lt, ℤ.results.ordered_ring.lt_mk]
+          exists r
+        have h_r_cop_p : (r : ℤ).coprime p := by
+          intro d h_d_div_r h_d_div_p
+          have ⟨u, h_u_inv, h_du⟩ := h_p_prime.right h_d_div_p
+          cases h_du
+          case inr h_du =>
+            rw [h_du]
+            assumption
+          case inl h_du =>
+            have : (p : ℤ) ∣ r := by
+              have ⟨q, h_q⟩ := h_d_div_r
+              exists q * u
+              rw [h_q, h_du, ℤ.results.ring.spec.mul_assoc, ℤ.results.ring.mul_right_comm]
+            have := ℤ.results.number_theory.le_of_divides ‹(r : ℤ) > 0› ‹(p : ℤ) ∣ r›
+            have := ℤ.results.coe_ℕ.coe_ℕ_hom_lt.mp h_r_lt_p
+            have ⟨a, h_a⟩ := ‹(p : ℤ) ≤ r›
+            rw [ℤ.results.ordered_ring.lt_mk] at this
+            have ⟨b, h_b, h_b_ne_0⟩ := this
+            have : ℤ.mk (0, b) = ℤ.mk (a, 0) := calc ℤ.mk (0, b)
+              _ = - ℤ.mk (b, 0)                   := by rw [ℤ.results.ring.neg_mk]
+              _ = - (ℤ.mk (p, 0) - ℤ.mk (r, 0))   := by rw [← h_b]
+              _ = ℤ.mk (r, 0) - ℤ.mk (p, 0)       := by
+                rw  [ ℤ.results.ring.sub_eq_add_neg, ℤ.results.ring.neg_add'
+                    , ℤ.results.ring.neg_neg
+                    , ℤ.results.ring.add_comm
+                    , ℤ.results.ring.sub_eq_add_neg]
+              _ = ℤ.mk (a, 0)                     := by rw [h_a]
+            have : b = 0 := this |> ℤ.exact |> Eq.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.right
+            contradiction -- `b = 0` and `b ≠ 0`
+        have ⟨a, b, h_ab⟩ := ℤ.results.number_theory.bezout ‹(r : ℤ).coprime p›
+        have h_ab : mk r * mk a + mk p * mk b = (1 : ℤ ⧸ p) := by
+          rw  [← ntn_one
+              , mul_mk, mul_mk
+              , add_mk
+              , h_ab]
+        exists a
+        have : x * a = 1 := calc x * ℤMod.mk a
+          _ = x * a + p * b := by simp
+          _ = r * a + p * b := by simp [h_r]
+          _ = 1 := by
+            show mk (ℤ.mk (r, 0)) * mk a + mk (ℤ.mk (p, 0)) * mk b = 1
+            rw [h_ab]
+        assumption
   end arith
 
+  /-- NOTE: This could've been a computable function if I had properly done the extended Euclidean algorithm. -/
   noncomputable
-  def inv {p : ℤ} {_ : p.prime} (x : ℤ ⧸ p) {_ : x ≠ 0} : ℤ ⧸ p := Classical.choose <| arith.nonzero_invertible_mod_prime ‹p.prime› x ‹x ≠ 0›
+  def inv {p : ℕ} {_ : (p : ℤ).prime} (x : ℤ ⧸ p) {_ : x ≠ 0} : ℤ ⧸ p := Classical.choose <| arith.nonzero_invertible_mod_prime ‹(p : ℤ).prime› x ‹x ≠ 0›
   set_option quotPrecheck false
-  notation:max x "⁻¹" => @inv p ‹p.prime› x ‹x ≠ 0› -- this is kinda a hack...
+  notation:max x "⁻¹" => @inv p ‹(p : ℤ).prime› x ‹x ≠ 0› -- this is kinda a hack...
   set_option quotPrecheck true
 
   namespace arith
-    -- KILLME: (good, the notation works)
-    noncomputable
-    example {x : ℤ ⧸ p} {_ : x ≠ 0} : ℤ ⧸ p := x⁻¹
+    -- Sigma
   end arith
   end da_field
 

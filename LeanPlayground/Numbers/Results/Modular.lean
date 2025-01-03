@@ -118,6 +118,7 @@ namespace Numbers.Modular.results
     theorem neg_eq_comm {x y : ℤ ⧸ m} : -x = y ↔ -y = x := arith.neg_eq_comm
 
     theorem eq_zero_iff_multiple {x : ℤ} : (x : ℤ ⧸ m) = (0 : ℤ ⧸ m) ↔ m ∣ x := arith.eq_zero_iff_multiple
+    theorem modulus_eq_zero {m : ℤ} : (m : ℤ ⧸ m) = (0 : ℤ ⧸ m) := arith.modulus_eq_zero
   end ring
 
 
