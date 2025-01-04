@@ -14,6 +14,14 @@ namespace Numbers.fund_arith
   instance : OfNat ℕ 2 where ofNat := .succ (.succ .zero)
   instance : OfNat ℤ 2 where ofNat := ((2 : ℕ) : ℤ)
 
+  -- Work classically, so that every `Prop` is `Decidable`.
+  -- This is because I designed `ℤ.le : ℤ → ℤ → Prop`, *not* `: ℤ → ℤ → Bool`, and don't have `ℤ.beq` or anything like that;
+  --  i.e. because I designed `ℤ` for *proving*, not for *programming*. As a consequence, writing a "remove an element from a `List ℤ`"
+  --  function is nigh-impossible without implementing `instance BEq ℤ` and proving that the instance agrees with the existing `Eq`uality
+  --  on `ℤ` (defined by `ℤ.sound`) -- and I really don't want to do all that work.
+  -- Next time, perhaps I'll give more thought to considerations like this.
+  attribute [instance] Classical.propDecidable
+
 
 
   /- SECTION: ¬ prime → composite -/
@@ -599,10 +607,10 @@ namespace Numbers.fund_arith
     := by
       have base_case : ∃ ps, (∀ (p : ℤ), p ∈ ps → p.prime) ∧ ℤ.mk (1, 0) = List.foldr ℤ.mul 1 ps := by
         exists []
-        constructor
-        · intro p h
-          contradiction -- `p ∈ []`
-        · simp [ℤ.ntn_one]
+        -- constructor
+        -- · intro p h
+        --   contradiction -- `p ∈ []`
+        -- · simp [ℤ.ntn_one]
       apply ℕ.results.induction.strong_induction_from 1
       · exact base_case
       · -- Recursive case
@@ -874,15 +882,168 @@ namespace Numbers.fund_arith
       rw [this]
       assumption
 
-
-
-  /- SECTION: Lemmas about sorting lists for the Uniqueness proof -/
+end Numbers.fund_arith
 
 
 
-  /- SECTION: Uniqueness-/
+namespace List
+  /- SECTION: List preliminaries for the Uniqueness statement and proof -/
+  /-- Count the number of occurances of an integer `q` in a list of integers. -/
+  noncomputable
+  def countℤ (q : ℤ) : List ℤ → Nat
+    | [] => 0
+    | (x :: xs) => (if q = x then 1 else 0) + xs.countℤ q
 
-  abbrev List.sorted : List ℤ → Prop := List.Pairwise ℤ.le
+  /--
+    An argument-swapped version of `List.countℤ`, with the emphasis on returning a function `ℤ → Nat`.
+    Functions `ℤ → Nat` may be thought of a *multisets* of integers†, so `xs.counts` should be though of
+    as the *multiset induced by `xs`*. As such, `xs.counts = ys.counts` should be thought of as the
+    statement that `xs` and `ys` represent the same multiset (although, of course, `xs` and `ys` may list
+    the multiset's elements in a different order to each other).
+
+    It is "obviously" true that `xs` and `ys` are "equal up to permutation" iff `xs.counts = ys.counts`.
+    However, it seems hellish to try to formalise "equal up to permutation", so I've taken the easy way
+    out and relied on `counts` in stating the uniqueness part of the fundamental theorem of arithmetic.
+
+    † Under the following isomorphism:
+      A multiset `A` corresponds to the "characteristic function" `x ↦ (number of occurances of x in A)`;
+      a function `f` corresponds to the multiset `A` such that for all `x`, `x` occurs exactly `f x` times in `A`.
+  -/
+  noncomputable
+  def counts (xs : List ℤ) : ℤ → Nat := xs.countℤ
+
+  /-- Remove an element from a list, if it exists. -/
+  noncomputable
+  def remove (z : ℤ) : List ℤ → List ℤ
+    | []        => []
+    | (x :: xs) => if z = x then xs else x :: xs.remove z
+
+  theorem count_elem {z : ℤ} {xs : List ℤ} : z ∈ xs → 1 ≤ xs.countℤ z := by
+    intro h
+    match xs with
+    | [] => contradiction -- `z ∈ []`
+    | (x :: xs) =>
+      unfold countℤ
+      simp at h
+      cases h
+      case inl h => simp [h]
+      case inr h =>
+        split
+        case isTrue => simp
+        case isFalse =>
+          rw [Nat.zero_add]
+          exact count_elem z xs h
+
+  theorem remove_count
+    (z q : ℤ) (xs : List ℤ)
+    : (xs.remove z).countℤ q = xs.countℤ q - (if z ∈ xs ∧ q = z then 1 else 0)
+    := by
+      match xs with
+      | [] => simp [remove, countℤ]
+      | (x :: xs) =>
+        simp [remove, countℤ]
+        by_cases h : z = x
+        case pos => -- `h : z = x`
+          simp [h]
+          by_cases h' : q = x
+          case pos => -- `h' : q = x`
+            simp [h']
+            have : 1 ≤ 1 := Nat.le_refl 1
+            conv => {
+              rhs
+              rw [Nat.add_comm, Nat.add_sub_assoc ‹1 ≤ 1›, Nat.sub_self, Nat.add_zero]
+            }
+          case neg => -- `h' : q ≠ x`
+            rw [← ne_eq] at h'
+            simp [h']
+        case neg => -- `h : z ≠ x`
+          rw [← ne_eq] at h
+          simp [h, countℤ, xs.remove_count z q]
+          rw [Nat.add_sub_assoc]
+          split
+          case h.isTrue h =>
+            have ⟨_, _⟩ := h
+            rw [‹q = z›]
+            exact xs.count_elem z ‹z ∈ xs›
+          case h.isFalse h =>
+            exact Nat.zero_le _
+
+  theorem cons_remove_counts
+    (z : ℤ) (xs : List ℤ)
+    : z ∈ xs
+    → (z :: xs.remove z).counts = xs.counts
+    := by
+      intro h
+      apply funext ; intro q
+      unfold counts
+      simp [countℤ, remove_count, h]
+      have : (if q = z then 1 else 0) ≤ countℤ q xs := by
+        by_cases h' : q = z <;> simp [h']
+        case pos => exact count_elem ‹z ∈ xs›
+        -- `case neg =>` already discharged by `<;> simp [h']`
+      have : (if q = z then 1 else 0) ≤ if q = z then 1 else 0 := Nat.le_refl _
+      rw [← Nat.add_sub_assoc ‹_›, Nat.add_comm _ (countℤ q xs), Nat.add_sub_assoc ‹_›, Nat.sub_self, Nat.add_zero]
+
+end List
+
+
+
+namespace Numbers.fund_arith
+  /- SECTION: Uniqueness -/
+
+  theorem one_not_lt_neg_one : ¬ (1 : ℤ) < -1 := by
+    rw [ℤ.results.ordered_ring.lt_mk]
+    intro ⟨a, h_a, _⟩
+    rw [← ℤ.ntn_one, ℤ.results.ring.neg_mk, ℤ.results.ring.sub_mk, ℕ.results.arithmetic.zero_add] at h_a
+    have : a = 0 := h_a |> ℤ.exact |> Eq.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+    contradiction -- `a = 0` and `a ≠ 0`
+
+  theorem fund_arith_unique.lemma.base_case'
+    : ∀ (ps : List ℤ),
+      (∀ p ∈ ps, p.prime)
+      → 1 = ps.foldr ℤ.mul 1
+      → ps = []
+    := by
+      intro ps h_ps_prime h_ps_mul_1
+      match ps with
+      | [] => rfl
+      | (p :: ps) =>
+        simp at h_ps_mul_1
+        have h_ps_mul_1 : 1 = p * ps.foldr ℤ.mul 1 := h_ps_mul_1
+        have : p ∣ 1 := by exists ps.foldr ℤ.mul 1
+        have : (1 : ℤ).invertible := by exists 1
+        have h_p_unit := ℤ.results.number_theory.unit_of_divides_unit ‹(1 : ℤ).invertible› ‹p ∣ 1› |> ℤ.results.ring.solve_invertible
+        have : p ∈ p :: ps := by simp
+        have := h_ps_prime p ‹p ∈ p :: ps› |> And.left
+        cases h_p_unit
+        case inl h_p_unit =>
+          rw [‹p = 1›] at this
+          have : ¬ ((1 : ℤ) < 1) := ℤ.results.ordered_ring.lt_irrefl 1
+          contradiction -- `1 < 1`
+        case inr h_p_unit =>
+          rw [‹p = -1›] at this
+          have := one_not_lt_neg_one
+          contradiction -- `1 < -1`
+
+  theorem fund_arith_unique.lemma.base_case
+    : ∀ (ps qs : List ℤ),
+      (∀ p ∈ ps, p.prime)     → (∀ q ∈ qs, q.prime)
+      → 1 = ps.foldr ℤ.mul 1  → 1 = qs.foldr ℤ.mul 1
+      → ps.counts = qs.counts
+    := by
+      intro ps qs h_ps_prime h_qs_prime h_ps_mul h_qs_mul
+      have : ps = [] := fund_arith_unique.lemma.base_case' ps h_ps_prime h_ps_mul
+      have : qs = [] := fund_arith_unique.lemma.base_case' qs h_qs_prime h_qs_mul
+      rw [‹ps = []›, ‹qs = []›]
+
+  theorem fund_arith_unique.lemma.from_one
+    (x : ℕ)
+    : 1 ≤ x
+    → ∀ (ps qs : List ℤ),
+      (∀ p ∈ ps, p.prime)     → (∀ q ∈ qs, q.prime)
+      → x = ps.foldr ℤ.mul 1  → x = qs.foldr ℤ.mul 1
+      → ps.counts = qs.counts
+    := sorry
 
   theorem fund_arith_unique
     (x : ℕ)
@@ -890,9 +1051,15 @@ namespace Numbers.fund_arith
     : ∀ (ps qs : List ℤ),
       (∀ p ∈ ps, p.prime)     → (∀ q ∈ qs, q.prime)
       → x = ps.foldr ℤ.mul 1  → x = qs.foldr ℤ.mul 1
-      → List.sorted ps        → List.sorted qs
-      → ps = qs
-    := sorry
+      → ps.counts = qs.counts
+    := by
+      have : 1 ≤ x := by
+        match x with
+        | 0 => contradiction
+        | .succ x' =>
+          exists x'
+          rw [← ℕ.ntn_succ_zero_eq_1, ℕ.results.arithmetic.succ_add, ℕ.ntn_zero_eq_0, ℕ.results.arithmetic.zero_add]
+      exact fund_arith_unique.lemma.from_one x ‹1 ≤ x›
     /- TODO: The key idea is to do the easy cases where `x = 1` or `x` is prime,
          and recurse on *composite* `x` according to `x = p * a` for `p` prime.
         In the recursive case, `ps.product = x = p * a ⟹ p ∣ ps.product ⟹ p ∈ ps`,
