@@ -731,4 +731,174 @@ namespace Numbers.fund_arith
               , ℕ.results.arithmetic.add_zero]
       exact fund_arith_exists' x ‹1 ≤ x›
 
+
+
+  /- SECTION: Lemmas about primes and products for the Uniqueness proof -/
+
+  theorem eq_of_prime_div_prime {p q : ℤ} : p.prime → q.prime → p ∣ q → p = q := by
+    intro h_p_prime h_q_prime h_p_div_q
+    have ⟨u, h_u_inv, h_u⟩ := h_q_prime.right h_p_div_q
+    have := h_u_inv |> ℤ.arith.solve_invertible
+    cases this
+    case inl this =>
+      cases h_u
+      case inl h_u =>
+        rw [this, ℤ.results.ring.mul_one] at h_u
+        assumption
+      case inr h_u =>
+        rw [this] at h_u
+        have := h_p_prime.left
+        rw [h_u] at this
+        have : ¬ (1 < (1 : ℤ)) := ℤ.results.ordered_ring.lt_irrefl 1
+        contradiction -- `1 < 1`
+    case inr this =>
+      cases h_u
+      case inl h_u =>
+        rw [this, ℤ.results.ring.mul_neg_one, Eq.comm, ℤ.results.ring.neg_eq_comm, Eq.comm] at h_u
+        have := h_q_prime.left
+        rw  [ h_u
+            , ← @ℤ.results.ring.neg_neg 1
+            , gt_iff_lt
+            , ℤ.results.ordered_ring.lt_neg_swap
+            ] at this
+        -- `this : p < -1`
+        have : 1 < p := ‹p.prime›.left
+        have : 1 < -(1 : ℤ) := ℤ.results.ordered_ring.lt_trans ‹1 < p› ‹p < -1›
+        rw [ℤ.results.ordered_ring.lt_mk] at this
+        have ⟨a, h_a, _⟩ := this
+        rw [ℤ.results.ring.sub_eq_add_neg, ← ℤ.ntn_one, ℤ.results.ring.neg_mk, ℤ.results.ring.add_mk] at h_a
+        have : a = 0 := h_a |> ℤ.exact |> Eq.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+        contradiction -- `a = 0` and `a ≠ 0`
+      case inr h_u =>
+        have := ‹p.prime›.left
+        rw [‹p = u›, ‹u = -1›, gt_iff_lt] at this
+        rw [ℤ.results.ordered_ring.lt_mk] at this
+        have ⟨a, h_a, _⟩ := this
+        rw [ℤ.results.ring.sub_eq_add_neg, ← ℤ.ntn_one, ℤ.results.ring.neg_mk, ℤ.results.ring.add_mk] at h_a
+        have : a = 0 := h_a |> ℤ.exact |> Eq.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+        contradiction -- `a = 0` and `a ≠ 0`
+
+  theorem prime_ndiv_one {p : ℤ} : p.prime → ¬ (p ∣ 1) := by
+    intro h_p_prime ⟨q, h_q⟩
+    have := ℤ.results.ring.solve_mul_eq_one h_q.symm
+    cases this
+    case inl this =>
+      have := this.left
+      have := ‹p.prime›.left
+      rw [‹p = 1›] at this
+      have : ¬ (1 < (1 : ℤ)) := ℤ.results.ordered_ring.lt_irrefl 1
+      contradiction -- `1 < 1`
+    case inr this =>
+      have := this.left
+      have := ‹p.prime›.left
+      rw [‹p = -1›, gt_iff_lt] at this
+      -- seen a contradiction from `1 < -1` before... I should've factored this out into a separate lemma
+      rw [ℤ.results.ordered_ring.lt_mk] at this
+      have ⟨a, h_a, _⟩ := this
+      rw [ℤ.results.ring.sub_eq_add_neg, ← ℤ.ntn_one, ℤ.results.ring.neg_mk, ℤ.results.ring.add_mk] at h_a
+      have : a = 0 := h_a |> ℤ.exact |> Eq.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+      contradiction -- `a = 0` and `a ≠ 0`
+
+  theorem nat_of_prime {p : ℤ} : p.prime → ∃ p' : ℕ, p = p' := by
+    have ⟨p', h_p'⟩ := p.existsCanonRep
+    cases h_p'
+    case inl h_p' =>
+      intro _
+      exists p'
+    case inr h_p' =>
+      intro h_p_prime
+      suffices False by contradiction
+      have := ‹p.prime›.left
+      rw [gt_iff_lt, ℤ.results.ordered_ring.lt_mk] at this
+      have ⟨a, h_a, h_a_ne_0⟩ := this
+      rw  [ h_p'
+          , ← ℤ.ntn_one
+          , ℤ.results.ring.sub_mk
+          , ℕ.results.arithmetic.add_zero
+          ] at h_a
+      have : a = 0 := h_a |> ℤ.exact |> Eq.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+      contradiction -- `a = 0` and `a ≠ 0`
+
+  theorem prime_div_element_of_prime_div_product
+    {p : ℤ} {xs : List ℤ}
+    : p.prime
+    → p ∣ xs.foldr ℤ.mul 1
+    → ∃ x ∈ xs, p ∣ x
+    := by
+      intro h_p_prime
+      induction xs
+      case nil =>
+        intro h
+        unfold List.foldr at h
+        have : ¬ (p ∣ 1) := prime_ndiv_one ‹p.prime›
+        contradiction -- `p ∣ 1` and `¬ (p ∣ 1)`
+      case cons y xs ih =>
+        intro h
+        unfold List.foldr at h
+        have h : p ∣ y * xs.foldr ℤ.mul 1 := h
+        have ⟨p', h_p_eq_p'⟩ := nat_of_prime ‹p.prime›
+        have := @Numbers.Modular.results.field.null_factor_divisibility
+          p' (‹p = p'› ▸ ‹p.prime›) y (xs.foldr ℤ.mul 1)
+          |> Iff.mp
+          <| (‹p = p'› ▸ h)
+        cases this
+        case inl this => -- `this : p' ∣ y`
+          exists y
+          constructor
+          · rw [List.mem_cons]
+            apply Or.inl
+            rfl
+          · rw [‹p = p'›]
+            assumption
+        case inr this => -- `this : p' ∣ xs.foldr ℤ.mul 1`
+          rw [‹p = p'›.symm] at this
+          have ⟨x, _, _⟩ := ih this
+          exists x
+          constructor
+          · rw [List.mem_cons]
+            apply Or.inr
+            assumption
+          · assumption
+
+  theorem prime_in_list_of_prime_div_prime_list_product
+    {p : ℤ} {ps : List ℤ}
+    : p.prime
+    → (∀ q ∈ ps, q.prime)
+    → p ∣ ps.foldr ℤ.mul 1
+    → p ∈ ps
+    := by
+      intro h_p_prime h_ps_prime h_p_div_product
+      have ⟨x, h_x_in_ps, h_p_div_x⟩ := prime_div_element_of_prime_div_product ‹p.prime› h_p_div_product
+      have : x.prime := h_ps_prime x ‹x ∈ ps›
+      have := eq_of_prime_div_prime ‹p.prime› ‹x.prime› ‹p ∣ x›
+      rw [this]
+      assumption
+
+
+
+  /- SECTION: Lemmas about sorting lists for the Uniqueness proof -/
+
+
+
+  /- SECTION: Uniqueness-/
+
+  abbrev List.sorted : List ℤ → Prop := List.Pairwise ℤ.le
+
+  theorem fund_arith_unique
+    (x : ℕ)
+    {h_x_ne_zero : x ≠ 0}
+    : ∀ (ps qs : List ℤ),
+      (∀ p ∈ ps, p.prime)     → (∀ q ∈ qs, q.prime)
+      → x = ps.foldr ℤ.mul 1  → x = qs.foldr ℤ.mul 1
+      → List.sorted ps        → List.sorted qs
+      → ps = qs
+    := sorry
+    /- TODO: The key idea is to do the easy cases where `x = 1` or `x` is prime,
+         and recurse on *composite* `x` according to `x = p * a` for `p` prime.
+        In the recursive case, `ps.product = x = p * a ⟹ p ∣ ps.product ⟹ p ∈ ps`,
+         so consider *removing* one instance of `p` from `ps` (i.e. `ps = List.mergeSort (p :: ps')`).
+         The resulting `ps'` has `a = ps'.product`, so `ps'` is uniquely determined. This uniquely
+         determines `ps = List.mergeSort (p :: ps')` in turn.
+    -/
+
 end Numbers.fund_arith
