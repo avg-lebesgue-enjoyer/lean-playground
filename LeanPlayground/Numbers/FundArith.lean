@@ -932,7 +932,7 @@ namespace List
         case isTrue => simp
         case isFalse =>
           rw [Nat.zero_add]
-          exact count_elem z xs h
+          exact count_elem h
 
   theorem remove_count
     (z q : ℤ) (xs : List ℤ)
@@ -964,7 +964,7 @@ namespace List
           case h.isTrue h =>
             have ⟨_, _⟩ := h
             rw [‹q = z›]
-            exact xs.count_elem z ‹z ∈ xs›
+            exact count_elem ‹z ∈ xs›
           case h.isFalse h =>
             exact Nat.zero_le _
 
@@ -997,6 +997,141 @@ namespace Numbers.fund_arith
     rw [← ℤ.ntn_one, ℤ.results.ring.neg_mk, ℤ.results.ring.sub_mk, ℕ.results.arithmetic.zero_add] at h_a
     have : a = 0 := h_a |> ℤ.exact |> Eq.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
     contradiction -- `a = 0` and `a ≠ 0`
+
+  theorem one_not_lt_zero : ¬ (1 : ℤ) < 0 := by
+    intro h
+    rw [ℤ.results.ordered_ring.lt_mk, ℤ.results.ring.zero_sub, ← ℤ.ntn_one, ℤ.results.ring.neg_mk] at h
+    have ⟨a, h_a, h_a_ne_0⟩ := h
+    have := h_a |> ℤ.exact |> Eq.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+    contradiction -- `a ≠ 0` and `a = 0`
+
+  theorem two_ne_zero : (2 : ℕ) ≠ 0 := by
+    intro h_2_eq_0
+    contradiction
+
+  theorem prime_not_invertible {p : ℤ} : p.prime → ¬ p.invertible := by
+    intro h_p_prime h_p_inv
+    have h_1_lt_p := h_p_prime |> And.left
+    have := h_p_inv |> ℤ.results.ring.solve_invertible
+    cases this
+    case inl this =>
+      rw [this] at h_1_lt_p
+      have : ¬ ((1 : ℤ) < 1) := ℤ.results.ordered_ring.lt_irrefl 1
+      contradiction -- `1 < 1`
+    case inr this =>
+      rw [this] at h_1_lt_p
+      have : ¬ ((1 : ℤ) < -1) := one_not_lt_neg_one
+      contradiction -- `1 < -1`
+
+  theorem prime_not_zero {p : ℤ} : p.prime → p ≠ 0 := by
+    intro h_p_prime _
+    rw [‹p = 0›] at h_p_prime
+    have := h_p_prime.left
+    have := one_not_lt_zero
+    contradiction -- `1 < 0`
+
+  theorem exists_nice_prime_factor
+    {x : ℕ}
+    : 2 ≤ x
+    → ∃ (p q : ℕ),
+        (p : ℤ).prime
+        ∧ 1 ≤ q ∧ q < x
+        ∧ x = p * q
+    := by
+      intro h_2_le_x
+      by_cases h : (x : ℤ).prime
+      case pos => -- `h : x.prime`
+        exists x, 1
+        have : (1 : ℕ) ≤ 1 := ℕ.results.order.le_refl
+        have : 1 < x := by
+          have ⟨a, h_a⟩ := ‹2 ≤ x›
+          exists a.succ
+          constructor
+          · rw [ℕ.results.arithmetic.add_succ, ← ℕ.results.arithmetic.succ_add]
+            exact h_a
+          · intro h; injection h
+        have : x = x * 1 := by rw [ℕ.results.arithmetic.mul_one]
+        exact ⟨‹_›, ‹_›, ‹_›, ‹_›⟩
+      case neg => -- `h : ¬ x.prime`
+        have ⟨p, h_p_prime, ⟨q, h_x_eq_pq⟩⟩ := has_prime_factor_of_not_prime ‹2 ≤ x› h
+        have ⟨p', h_p'⟩ := p.existsCanonRep
+        have ⟨q', h_q'⟩ := q.existsCanonRep
+        cases h_p'
+        case inr h_p' =>
+          have := ‹p.prime›.left
+          rw  [h_p', gt_iff_lt, ℤ.results.ordered_ring.lt_mk
+              , ← ℤ.ntn_one
+              , ℤ.results.ring.sub_mk
+              , ℕ.results.arithmetic.zero_add
+              ] at this
+          have ⟨a, h_a, _⟩ := this
+          have : a = 0 := h_a |> ℤ.exact |> Eq.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+          contradiction -- `a = 0` and `a ≠ 0`
+        case inl h_p' =>
+          cases h_q'
+          case inr h_q' =>
+            suffices False by contradiction
+            have ⟨a, h_a⟩ := ‹2 ≤ x›
+            rw  [ h_p', h_q', h_a
+                , ℤ.results.ring.mul_mk
+                , ℕ.results.arithmetic.mul_zero
+                , ℕ.results.arithmetic.mul_zero
+                , ℕ.results.arithmetic.zero_mul
+                , ℕ.results.arithmetic.add_zero
+                , ℕ.results.arithmetic.add_zero
+                ] at h_x_eq_pq
+            have := h_x_eq_pq |> ℤ.exact |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+            have : (2 : ℕ) ≠ 0 := two_ne_zero
+            contradiction -- `2 = 0`
+          case inl h_q' =>
+            exists p', q'
+            constructor
+            · rw [←h_p']
+              assumption
+            · constructor
+              · match q' with
+                | 0 =>
+                  rw [h_q', ℤ.ntn_zero, ℤ.results.ring.mul_zero, ← ℤ.ntn_zero] at h_x_eq_pq
+                  have : x = 0 := ℤ.results.coe_ℕ.coe_ℕ_hom_eq.mpr h_x_eq_pq
+                  rw [‹x = 0›] at h_2_le_x
+                  have ⟨δ, h_δ⟩ := h_2_le_x
+                  have : (2 : ℕ) = 0 := h_δ |> Eq.symm |> ℕ.results.arithmetic.args_0_of_add_0 |> And.left
+                  have : (2 : ℕ) ≠ 0 := two_ne_zero
+                  contradiction -- `2 = 0`
+                | .succ q' =>
+                  exists q'
+                  rw [← ℕ.ntn_succ_zero_eq_1, ℕ.results.arithmetic.succ_add, ℕ.ntn_zero_eq_0, ℕ.results.arithmetic.zero_add]
+              · constructor
+                · show q' < x
+                  apply ℤ.results.coe_ℕ.coe_ℕ_hom_lt.mpr
+                  rw [ℤ.results.ordered_ring.lt_iff_not_ge]
+                  rw [← h_q', h_x_eq_pq, ge_iff_le]
+                  intro (h : p * q ≤ q) -- show a contradiction from this information
+                  rw  [ h_p', h_q'
+                      , ℤ.results.ring.mul_mk
+                      , ℕ.results.arithmetic.mul_zero
+                      , ℕ.results.arithmetic.mul_zero
+                      , ℕ.results.arithmetic.zero_mul
+                      , ℕ.results.arithmetic.add_zero
+                      , ℕ.results.arithmetic.add_zero
+                      ] at h
+                  have ⟨a, h_a⟩ := h
+                  rw  [ ℤ.results.ring.sub_mk
+                      , ℕ.results.arithmetic.add_zero
+                      , ℕ.results.arithmetic.zero_add
+                      ] at h_a
+                  have : q' = a + p' * q' := h_a |> ℤ.exact
+                  admit
+                · rw  [ h_p', h_q', ℤ.results.ring.mul_mk
+                      , ℕ.results.arithmetic.mul_zero
+                      , ℕ.results.arithmetic.mul_zero
+                      , ℕ.results.arithmetic.zero_mul
+                      , ℕ.results.arithmetic.add_zero
+                      , ℕ.results.arithmetic.add_zero
+                      ] at h_x_eq_pq
+                  exact ℤ.results.coe_ℕ.coe_ℕ_hom_eq.mpr h_x_eq_pq
+
+
 
   theorem fund_arith_unique.lemma.base_case'
     : ∀ (ps : List ℤ),
@@ -1036,6 +1171,53 @@ namespace Numbers.fund_arith
       have : qs = [] := fund_arith_unique.lemma.base_case' qs h_qs_prime h_qs_mul
       rw [‹ps = []›, ‹qs = []›]
 
+  theorem fund_arith_unique.lemma.prime'
+    (x : ℕ)
+    : (x : ℤ).prime
+    → ∀ (ps : List ℤ),
+      (∀ p ∈ ps, p.prime)
+      → x = ps.foldr ℤ.mul 1
+      → ps = [(x : ℤ)]
+    := by
+      intro h_x_prime ps h_ps_prime h_ps_mul
+      have : (x : ℤ) ∣ ps.foldr ℤ.mul 1 := by rw [h_ps_mul] ; exact ℤ.results.number_theory.divides_refl _
+      have := prime_in_list_of_prime_div_prime_list_product ‹(x : ℤ).prime› h_ps_prime ‹_›
+      match ps with
+      | [] => contradiction -- `x ∈ []`
+      | (p :: ps) =>
+        by_cases h : p = x
+        case pos => -- `h : p = x`
+          rw [h]
+          suffices ps = [] by rw [this]
+          match ps with
+          | [] => rfl
+          | (q :: ps) =>
+            simp [← h] at h_ps_mul
+            have h_ps_mul : p = p * (q * ps.foldr ℤ.mul 1) := h_ps_mul
+            conv at h_ps_mul => { lhs; rw [← @ℤ.results.ring.mul_one p] }
+            have : p ≠ 0 := sorry
+            have := ℤ.results.ring.mul_left_cancel ‹p ≠ 0› h_ps_mul
+            have : q ∣ 1 := by exists List.foldr ℤ.mul 1 ps
+            have : (1 : ℤ).invertible := by exists 1
+            have := ℤ.results.number_theory.unit_of_divides_unit ‹(1 : ℤ).invertible› ‹q ∣ 1›
+            have := h_ps_prime q (by simp) |> prime_not_invertible
+            contradiction -- `q.invertible` and `¬ q.invertible`
+        case neg => -- `h : p ≠ x`
+          admit
+
+  theorem fund_arith_unique.lemma.prime
+    (x : ℕ)
+    : (x : ℤ).prime
+    → ∀ (ps qs : List ℤ),
+      (∀ p ∈ ps, p.prime)     → (∀ q ∈ qs, q.prime)
+      → x = ps.foldr ℤ.mul 1  → x = qs.foldr ℤ.mul 1
+      → ps.counts = qs.counts
+    := by
+      intro _ ps qs _ _ _ _
+      have := fund_arith_unique.lemma.prime' x ‹_› ps ‹_› ‹_›
+      have := fund_arith_unique.lemma.prime' x ‹_› qs ‹_› ‹_›
+      rw [‹ps = [(x : ℤ)]›, ‹qs = [(x : ℤ)]›]
+
   theorem fund_arith_unique.lemma.from_one
     (x : ℕ)
     : 1 ≤ x
@@ -1043,7 +1225,33 @@ namespace Numbers.fund_arith
       (∀ p ∈ ps, p.prime)     → (∀ q ∈ qs, q.prime)
       → x = ps.foldr ℤ.mul 1  → x = qs.foldr ℤ.mul 1
       → ps.counts = qs.counts
-    := sorry
+    := by
+      apply ℕ.results.induction.strong_induction_from 1
+      · exact fund_arith_unique.lemma.base_case
+      · intro x
+        by_cases h' : x = 1
+        case pos => -- `h' : x = 1`; i.e. base case (again, ik I should change the type of `ℕ.results.induction.strong_induction_from`, but I'm in too deep now T-T)
+          intro _ _
+          rw [h']
+          exact fund_arith_unique.lemma.base_case
+        case neg => -- `h' : x ≠ 1`
+          intro h_1_le_x sih ps qs h_ps_prime h_qs_prime h_ps_mul h_qs_mul
+          show ps.counts = qs.counts
+          by_cases h : (x : ℤ).prime
+          case pos => -- `h : x.prime`
+            exact fund_arith_unique.lemma.prime x ‹_› ps qs ‹_› ‹_› ‹_› ‹_›
+          case neg => -- `h : ¬ x.prime`
+            -- TODO: Recurse here
+            have : 2 ≤ x := sorry
+            have ⟨p, q, h_p_prime, h_1_le_q, h_q_lt_x, h_x_eq_pq⟩ := exists_nice_prime_factor ‹2 ≤ x›
+            admit
+    /- TODO: The key idea is to do the easy cases where `x = 1` or `x` is prime,
+         and recurse on *composite* `x` according to `x = p * a` for `p` prime.
+        In the recursive case, `ps.product = x = p * a ⟹ p ∣ ps.product ⟹ p ∈ ps`,
+         so consider *removing* one instance of `p` from `ps` (i.e. `ps = List.mergeSort (p :: ps')`).
+         The resulting `ps'` has `a = ps'.product`, so `ps'` is uniquely determined. This uniquely
+         determines `ps = List.mergeSort (p :: ps')` in turn.
+    -/
 
   theorem fund_arith_unique
     (x : ℕ)
@@ -1060,12 +1268,5 @@ namespace Numbers.fund_arith
           exists x'
           rw [← ℕ.ntn_succ_zero_eq_1, ℕ.results.arithmetic.succ_add, ℕ.ntn_zero_eq_0, ℕ.results.arithmetic.zero_add]
       exact fund_arith_unique.lemma.from_one x ‹1 ≤ x›
-    /- TODO: The key idea is to do the easy cases where `x = 1` or `x` is prime,
-         and recurse on *composite* `x` according to `x = p * a` for `p` prime.
-        In the recursive case, `ps.product = x = p * a ⟹ p ∣ ps.product ⟹ p ∈ ps`,
-         so consider *removing* one instance of `p` from `ps` (i.e. `ps = List.mergeSort (p :: ps')`).
-         The resulting `ps'` has `a = ps'.product`, so `ps'` is uniquely determined. This uniquely
-         determines `ps = List.mergeSort (p :: ps')` in turn.
-    -/
 
 end Numbers.fund_arith
