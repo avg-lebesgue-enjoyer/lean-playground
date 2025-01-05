@@ -1399,7 +1399,7 @@ namespace ℕ
     --       have ⟨d, h_d⟩ : p ∣ r.succ * b :=
     --         factor_of_factor_thing_eq_factor (d := p) h_d (by exists q * b) (by exists d)
     --       have : p ∣ r.succ * b := by exists d
-    --       admit -- FIXME: `admit` defeat
+    --       admit
 
     -- theorem prime_divides_product_list
     --   {p : ℕ} {qs : List ℕ}
@@ -1461,7 +1461,7 @@ namespace ℕ
     --     ∧ x = ps.foldr ℕ.mul 1        ∧ x = qs.foldr ℕ.mul 1
     --     ∧ list_increasing ps          ∧ list_increasing qs
     --     → qs = ps
-    --   := sorry -- FIXME:
+    --   := sorry
 
     /-
       The fundamental theorem of arithmetic; any nonzero natural number has a unique-up-to-permutation
