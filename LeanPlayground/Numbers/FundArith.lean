@@ -1,5 +1,5 @@
 /- @file LeanPlayground/Numbers/FundArith.lean
- - Results building towards the *fundamental theorem of arithmetic*.
+ - The *fundamental theorem of arithmetic*, proven in `6195` lines of code (counting `Numbers/FundArith.lean`, `Numbers/Integer.lean`, `Numbers/Modular.lean` and `Numbers/Natural.lean`).
  -/
 
 /- IMPORTS: Numbers -/

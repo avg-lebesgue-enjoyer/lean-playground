@@ -1368,38 +1368,38 @@ namespace ℕ
             have := this.right
             contradiction -- `r = 0` and `r ≠ 0`
 
-    /-- Euclid's lemma. -/
-    theorem prime_divides_product
-      {p a b : ℕ}
-      : prime p
-      → p ∣ a * b
-      → p ∣ a ∨ p ∣ b
-      := by
-        intro h_prime_p h_p_div_ab
-        have : p ≠ 0 := by
-          intro h_p_eq_0
-          -- show a contradiction
-          unfold prime at h_prime_p
-          have := h_prime_p.right (succ 1) (by exists 0)
-          cases this
-          case inl this => injection this ; contradiction
-          case inr this => rw [h_p_eq_0] at this ; injection this
-        have ⟨q, r, h_qr, h_r_lt_p⟩  := euclidean_division a p (by assumption) |> And.left
-        have ⟨d, h_d⟩ := h_p_div_ab
-        rw [h_qr] at h_d
-        match r with
-        | 0 =>
-          apply Or.inl
-          show p ∣ a
-          exists q
-        | succ r =>
-          apply Or.inr
-          show p ∣ b
-          rw [mul.thm_add_mul, ← mul.thm_assoc] at h_d
-          have ⟨d, h_d⟩ : p ∣ r.succ * b :=
-            factor_of_factor_thing_eq_factor (d := p) h_d (by exists q * b) (by exists d)
-          have : p ∣ r.succ * b := by exists d
-          admit -- FIXME: `admit` defeat
+    /- Euclid's lemma. NOTE: This is where I gave up on proving this theorem with *only* the theory of `ℕ`, and I resolved to develop the theory of `ℤ ⧸ p` first. -/
+    -- theorem prime_divides_product
+    --   {p a b : ℕ}
+    --   : prime p
+    --   → p ∣ a * b
+    --   → p ∣ a ∨ p ∣ b
+    --   := by
+    --     intro h_prime_p h_p_div_ab
+    --     have : p ≠ 0 := by
+    --       intro h_p_eq_0
+    --       -- show a contradiction
+    --       unfold prime at h_prime_p
+    --       have := h_prime_p.right (succ 1) (by exists 0)
+    --       cases this
+    --       case inl this => injection this ; contradiction
+    --       case inr this => rw [h_p_eq_0] at this ; injection this
+    --     have ⟨q, r, h_qr, h_r_lt_p⟩  := euclidean_division a p (by assumption) |> And.left
+    --     have ⟨d, h_d⟩ := h_p_div_ab
+    --     rw [h_qr] at h_d
+    --     match r with
+    --     | 0 =>
+    --       apply Or.inl
+    --       show p ∣ a
+    --       exists q
+    --     | succ r =>
+    --       apply Or.inr
+    --       show p ∣ b
+    --       rw [mul.thm_add_mul, ← mul.thm_assoc] at h_d
+    --       have ⟨d, h_d⟩ : p ∣ r.succ * b :=
+    --         factor_of_factor_thing_eq_factor (d := p) h_d (by exists q * b) (by exists d)
+    --       have : p ∣ r.succ * b := by exists d
+    --       admit -- FIXME: `admit` defeat
 
     theorem prime_divides_product_list
       {p : ℕ} {qs : List ℕ}
@@ -1448,20 +1448,20 @@ namespace ℕ
               rw [h_p_eq_q]
               apply List.mem_cons.mpr ; apply Or.inl ; rfl
 
-    /--
+    /-
       Uniqueness part of the fundamental theorem of arithmetic.
       Actual uniqueness of the list of primes (not uniqueness up to permutation) is
         enforced by requiring it to be sorted.
     -/
-    theorem lem_fund_arith_unique
-      (x : ℕ)
-      (h_x_ne_0 : x ≠ 0)
-      : ∀ (ps qs : List ℕ),
-        (∀ (p : ℕ), p ∈ ps → prime p) ∧ (∀ (q : ℕ), q ∈ qs → prime q)
-        ∧ x = ps.foldr ℕ.mul 1        ∧ x = qs.foldr ℕ.mul 1
-        ∧ list_increasing ps          ∧ list_increasing qs
-        → qs = ps
-      := sorry -- FIXME:
+    -- theorem lem_fund_arith_unique
+    --   (x : ℕ)
+    --   (h_x_ne_0 : x ≠ 0)
+    --   : ∀ (ps qs : List ℕ),
+    --     (∀ (p : ℕ), p ∈ ps → prime p) ∧ (∀ (q : ℕ), q ∈ qs → prime q)
+    --     ∧ x = ps.foldr ℕ.mul 1        ∧ x = qs.foldr ℕ.mul 1
+    --     ∧ list_increasing ps          ∧ list_increasing qs
+    --     → qs = ps
+    --   := sorry -- FIXME:
 
     /--
       The fundamental theorem of arithmetic; any nonzero natural number has a unique-up-to-permutation
