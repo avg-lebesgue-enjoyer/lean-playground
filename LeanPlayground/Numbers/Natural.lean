@@ -1401,52 +1401,52 @@ namespace ℕ
     --       have : p ∣ r.succ * b := by exists d
     --       admit -- FIXME: `admit` defeat
 
-    theorem prime_divides_product_list
-      {p : ℕ} {qs : List ℕ}
-      : prime p
-      → (∀ (q : ℕ), q ∈ qs → prime q)
-      → p ∣ qs.foldr ℕ.mul 1
-      → p ∈ qs
-      := by
-        induction qs
-        case nil =>
-          intro h_prime_p h_prime_qs ⟨d, h_d⟩
-          -- show a contradiction
-          have h_d : p * d = 1 := h_d.symm
-          have : p = 1 := And.left $ mul.thm_args_1_of_mul_1 _ _ h_d
-          have : p ≠ 1 := h_prime_p.left
-          contradiction
-        case cons q qs ih =>
-          intro h_prime_p h_prime_qs ⟨d, h_d⟩
-          show p ∈ q :: qs
-          have : (q :: qs).foldr mul 1 = q * qs.foldr mul 1 := by apply List.foldr_cons
-          rw [this] at h_d
-          have : p ∣ q * qs.foldr mul 1 := by exists d
-          have : p ∣ q ∨ p ∣ qs.foldr mul 1 := prime_divides_product (by assumption) this
-          cases this
-          case inr =>
-            rw [List.mem_cons]
-            apply Or.inr
-            apply ih
-            · assumption
-            · intro q h_q_in_qs
-              apply h_prime_qs q
-              rw [List.mem_cons] ; apply Or.inr ; assumption
-            · assumption
-          case inl h_p_divides_q =>
-            have : prime q := by
-              apply h_prime_qs q
-              rw [List.mem_cons]
-              exact Or.inl rfl
-            unfold prime at this
-            have : p = 1 ∨ p = q := this.right p h_p_divides_q
-            cases this
-            case inl h_p_eq_1 =>
-              have : p ≠ 1 := h_prime_p.left
-              contradiction
-            case inr h_p_eq_q =>
-              rw [h_p_eq_q]
-              apply List.mem_cons.mpr ; apply Or.inl ; rfl
+    -- theorem prime_divides_product_list
+    --   {p : ℕ} {qs : List ℕ}
+    --   : prime p
+    --   → (∀ (q : ℕ), q ∈ qs → prime q)
+    --   → p ∣ qs.foldr ℕ.mul 1
+    --   → p ∈ qs
+    --   := by
+    --     induction qs
+    --     case nil =>
+    --       intro h_prime_p h_prime_qs ⟨d, h_d⟩
+    --       -- show a contradiction
+    --       have h_d : p * d = 1 := h_d.symm
+    --       have : p = 1 := And.left $ mul.thm_args_1_of_mul_1 _ _ h_d
+    --       have : p ≠ 1 := h_prime_p.left
+    --       contradiction
+    --     case cons q qs ih =>
+    --       intro h_prime_p h_prime_qs ⟨d, h_d⟩
+    --       show p ∈ q :: qs
+    --       have : (q :: qs).foldr mul 1 = q * qs.foldr mul 1 := by apply List.foldr_cons
+    --       rw [this] at h_d
+    --       have : p ∣ q * qs.foldr mul 1 := by exists d
+    --       have : p ∣ q ∨ p ∣ qs.foldr mul 1 := prime_divides_product (by assumption) this
+    --       cases this
+    --       case inr =>
+    --         rw [List.mem_cons]
+    --         apply Or.inr
+    --         apply ih
+    --         · assumption
+    --         · intro q h_q_in_qs
+    --           apply h_prime_qs q
+    --           rw [List.mem_cons] ; apply Or.inr ; assumption
+    --         · assumption
+    --       case inl h_p_divides_q =>
+    --         have : prime q := by
+    --           apply h_prime_qs q
+    --           rw [List.mem_cons]
+    --           exact Or.inl rfl
+    --         unfold prime at this
+    --         have : p = 1 ∨ p = q := this.right p h_p_divides_q
+    --         cases this
+    --         case inl h_p_eq_1 =>
+    --           have : p ≠ 1 := h_prime_p.left
+    --           contradiction
+    --         case inr h_p_eq_q =>
+    --           rw [h_p_eq_q]
+    --           apply List.mem_cons.mpr ; apply Or.inl ; rfl
 
     /-
       Uniqueness part of the fundamental theorem of arithmetic.
@@ -1463,27 +1463,27 @@ namespace ℕ
     --     → qs = ps
     --   := sorry -- FIXME:
 
-    /--
+    /-
       The fundamental theorem of arithmetic; any nonzero natural number has a unique-up-to-permutation
         factorisation into primes.
       Uniqueness-up-to-permutation is encoded as requring that a *sorted* list of prime factors be
         unique.
     -/
-    theorem fund_arith
-      (x : ℕ)
-      (h_x_ne_0 : x ≠ 0)
-      : (∃ (ps : List ℕ),
-        (∀ (p : ℕ), p ∈ ps → prime p)
-        ∧ x = ps.foldr ℕ.mul 1
-      ) ∧ ∀ (ps qs : List ℕ),
-        (∀ (p : ℕ), p ∈ ps → prime p) ∧ (∀ (q : ℕ), q ∈ qs → prime q)
-        ∧ x = ps.foldr ℕ.mul 1        ∧ x = qs.foldr ℕ.mul 1
-        ∧ list_increasing ps          ∧ list_increasing qs
-        → qs = ps
-      := by
-        constructor
-        · exact lem_fund_arith_exists x h_x_ne_0
-        · exact lem_fund_arith_unique x h_x_ne_0
+    -- theorem fund_arith
+    --   (x : ℕ)
+    --   (h_x_ne_0 : x ≠ 0)
+    --   : (∃ (ps : List ℕ),
+    --     (∀ (p : ℕ), p ∈ ps → prime p)
+    --     ∧ x = ps.foldr ℕ.mul 1
+    --   ) ∧ ∀ (ps qs : List ℕ),
+    --     (∀ (p : ℕ), p ∈ ps → prime p) ∧ (∀ (q : ℕ), q ∈ qs → prime q)
+    --     ∧ x = ps.foldr ℕ.mul 1        ∧ x = qs.foldr ℕ.mul 1
+    --     ∧ list_increasing ps          ∧ list_increasing qs
+    --     → qs = ps
+    --   := by
+    --     constructor
+    --     · exact lem_fund_arith_exists x h_x_ne_0
+    --     · exact lem_fund_arith_unique x h_x_ne_0
   end fund_arithmetic
   end tomb
 
