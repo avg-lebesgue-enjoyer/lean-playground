@@ -1079,7 +1079,30 @@ namespace Numbers.fund_arith
     have := one_not_lt_zero
     contradiction -- `1 < 0`
 
-  theorem prime_ge_two {p : ℤ} : p.prime → 2 ≤ p := sorry
+  theorem prime_ge_two {p : ℤ} : p.prime → 2 ≤ p := by
+    intro _
+    -- have : p ≠ 1 := by
+    --   intro _
+    --   have := ‹p.prime›.left
+    --   rw [‹p = 1›] at this
+    --   have : ¬ (1 < (1 : ℤ)) := ℤ.results.ordered_ring.lt_irrefl 1
+    --   contradiction -- `1 < 1`
+    have := ‹p.prime›.left
+    rw [gt_iff_lt, ℤ.results.ordered_ring.lt_mk] at this
+    have ⟨a, h_a, _⟩ := this
+    match a with
+    | 0 => contradiction -- `0 ≠ 0`
+    | .succ b =>
+      exists b
+      have : p - 2 = p - 1 - 1 := by
+        repeat rw [ℤ.results.ring.sub_eq_add_neg]
+        rw  [ ← ℤ.results.ring.add_assoc
+            , ← ℤ.results.ring.neg_add']
+        rfl
+      rw [this, h_a, ← ℤ.ntn_one, ℤ.results.ring.sub_mk, ℕ.results.arithmetic.add_zero, ℕ.results.arithmetic.zero_add]
+      apply ℤ.sound
+      show b.succ = b + 1
+      rfl
 
   theorem exists_nice_prime_factor
     {x : ℕ}
@@ -1364,13 +1387,6 @@ namespace Numbers.fund_arith
             rw [this]
             suffices ps'.counts = qs'.counts by rw [this]
             assumption
-    /- TODO: The key idea is to do the easy cases where `x = 1` or `x` is prime,
-         and recurse on *composite* `x` according to `x = p * a` for `p` prime.
-        In the recursive case, `ps.product = x = p * a ⟹ p ∣ ps.product ⟹ p ∈ ps`,
-         so consider *removing* one instance of `p` from `ps` (i.e. `ps = List.mergeSort (p :: ps')`).
-         The resulting `ps'` has `a = ps'.product`, so `ps'` is uniquely determined. This uniquely
-         determines `ps = List.mergeSort (p :: ps')` in turn.
-    -/
 
   theorem fund_arith_unique
     (x : ℕ)
@@ -1387,5 +1403,23 @@ namespace Numbers.fund_arith
           exists x'
           rw [← ℕ.ntn_succ_zero_eq_1, ℕ.results.arithmetic.succ_add, ℕ.ntn_zero_eq_0, ℕ.results.arithmetic.zero_add]
       exact fund_arith_unique.lemma.from_one x ‹1 ≤ x›
+
+
+
+  /- SECTION: The fundamental theorem of arithmetic -/
+
+  theorem fund_arith
+    (x : ℕ)
+    (h : x ≠ 0)
+    : (∃ (ps : List ℤ),
+        (∀ p ∈ ps, p.prime)
+        ∧ x = ps.foldr ℤ.mul 1
+      ) ∧ ∀ (ps qs : List ℤ),
+        (∀ p ∈ ps, p.prime)     → (∀ q ∈ qs, q.prime)
+        → x = ps.foldr ℤ.mul 1  → x = qs.foldr ℤ.mul 1
+        → ps.counts = qs.counts
+    := by constructor <;> (first | exact @fund_arith_exists x ‹x ≠ 0› | exact @fund_arith_unique x ‹x ≠ 0›)
+
+  #print axioms fund_arith -- *`'Numbers.fund_arith.fund_arith' depends on axioms: [propext, Classical.choice, Quot.sound]`*
 
 end Numbers.fund_arith
