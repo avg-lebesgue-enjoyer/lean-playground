@@ -22,3 +22,7 @@ structure Operations : Type where
   uqIds : ∀ (i j : Fin list.length), i ≠ j → list.get i ≠ list.get j
 deriving Repr
 abbrev Ops : Type := Operations
+
+-- TODO:
+--  Equations between operation composites in an operation list
+--  Equational classes
