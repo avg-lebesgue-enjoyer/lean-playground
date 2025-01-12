@@ -176,7 +176,7 @@ instance instMemStringVars : Membership String Vars where
 --  ` | app : (op : Op) → (args : List (Term ops vars)) → Term ops vars `
 --  `def Term.isLegal {ops : Ops} {vars : Vars} : Term ops vars → Prop              `
 --  ` | .var name => name ∉ ops.ids ∧ name ∉ vars.ids                               `
---  ` | .app op args => args.length = op.arity ∧ ∀ (t : {t // t ∈ args}), t.isLegal `
+--  ` | .app op args => args.length = op.arity ∧ ∀ (t : {t // t ∈ args}), t.val.isLegal `
 --   /-- Legal terms. Use these in specifications. -/
 --  `def TermL (ops : Ops) (vars : Vars) := { t : Term ops vars // t.isLegal }      `
 --  `structure Equation (ops : Ops) (vars : Vars) : Type where`
