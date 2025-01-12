@@ -170,6 +170,19 @@ instance instMemStringVars : Membership String Vars where
 --  It's currently really messy, and hard to reason with in Lean4 (no `Term.brecOn`, so termination proofs
 --  are awful).
 -- It's a real shame that I can't have `Vec op.arity Term` as part of the `inductive` definition :/
+-- I think the way to go is as follows:
+--  `inductive Term (ops : Ops) (vars : Vars) : Type where              `
+--  ` | var : (name : String) → Term ops vars                           `
+--  ` | app : (op : Op) → (args : List (Term ops vars)) → Term ops vars `
+--  `def Term.isLegal {ops : Ops} {vars : Vars} : Term ops vars → Prop              `
+--  ` | .var name => name ∉ ops.ids ∧ name ∉ vars.ids                               `
+--  ` | .app op args => args.length = op.arity ∧ ∀ (t : {t // t ∈ args}), t.isLegal `
+--   /-- Legal terms. Use these in specifications. -/
+--  `def TermL (ops : Ops) (vars : Vars) := { t : Term ops vars // t.isLegal }      `
+--  `structure Equation (ops : Ops) (vars : Vars) : Type where`
+--  `   lhs : TermL ops vars`
+--  `   rhs : TermL ops vars`
+--  etc.
 /--
   The structure behind a term, but with no guarantee that it makes any sense.
   A term is comprised of `Var`iables with given `String` names, and `App`lications
