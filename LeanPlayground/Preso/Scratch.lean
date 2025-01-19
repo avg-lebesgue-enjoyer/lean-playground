@@ -358,6 +358,27 @@ theorem ℕ.add_comm (x y : ℕ)
     case zero => simp
     case succ y' ih => simp_all
 
--- FIXME: Think of more stuff to show off
+-- FIXME: Think of more stuff to show off...
+--    Maybe some stuff on divisibility, using built-in `Int`?
+--    oh, definitely show off **Thm. Fund. Arith**
+--    Need to do some functional programming to get the necessary background for logic in the first place... what do?
+--      LISTS, for sure, as an example `inductive` definition
+--      `×`
+--      `⊕`
+--      `inductive DepPair (α : Type) (β : α → Type) where | intro : (a : α) → β a → DepPair α β`
+--      Function types, and *dependent* function types
+--    Some proofs in functional programming?
+--      `BinTree`s? `BinTree.mirror`, `BinTree.preorderTraversal` (with `List.reverse`) etc?
+--    Strong induction and the well-ordering principle
+--    Basic set theory?
+--      Def. `set α := (α → Prop)`
+--      Cardinality
+--    Basic abstract algebra!
+--      Def. group
+--      pv. `∃! i : (G : Group), ∀ x : G, x * i = i * x = x`
+--    At least *mention* that Lean4 has built-in support for `Quotient` types
+--    Maybe some basic graph theory:
+--      Def. graph
+--      pv. **Lem. Handshake**
 
 end π
