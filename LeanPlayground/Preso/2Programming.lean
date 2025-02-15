@@ -2,6 +2,127 @@
   **FILE** `LeanPlayground/Preso/2Programming.lean`
   **PURPOSE** Introduction to programming
 -/
+set_option pp.fieldNotation false
+set_option linter.unusedVariables false
+
+namespace ν
+
+/- SECTION: Terms, Types and Functions -/
+
+-- Everything in Lean is a **term**
+example := 42
+example := [0, 1, 2, 3]
+example := fun x => x + 1
+example := Nat
+
+-- All terms are categorised by **types**
+-- NOTE: `#check` each of the things above
+
+-- *Computation* is about turning terms into other terms.
+-- We do this using **functions**
+-- NOTE: Give examples of functions
+-- TESTING::
+#eval (fun x => x + 1) (42)
+#eval (fun x => x + 1)  42
+#eval (fun x y => x + y) 4 2
+-- ::TESTING
+
+-- Functions are categorised by **function types** (`A → B`)
+-- Let's write our own function of type `Nat → List Nat`:
+-- TESTING::
+def funny : Nat → List Nat :=
+  fun x => [x, x]
+#eval funny 6
+-- ::TESTING
+
+-- We can simulate "multiple arguments" with the following pattern:
+--  `: A → (B → C)`   (aka. `A → B → C`)
+-- TESTING::
+def hilarious : Nat → (Nat → Nat) :=
+  fun x y => x + (2 * y)
+#eval hilarious 4 2
+-- ::TESTING
+
+/- SECTION: Inductive Types -/
+
+-- To do *interesting* computation, we need to build our own types.
+-- For this, we have **inductive** types.
+
+inductive NatPair : Type where
+  | intro : Nat → Nat → NatPair
+
+-- `NatPair.intro` creates new `NatPair`s
+def fourTwo : NatPair := NatPair.intro 4 2
+
+-- Most importantly, we have **pattern matching** on inductive types:
+def NatPair.sum : NatPair → Nat :=
+  fun p =>
+  match p with
+  | intro x y => x + y
+#eval NatPair.sum fourTwo
+
+-- `NatPair` generalises to the **product type**:
+inductive Product (α β : Type) : Type where
+  | intro : α → β → Product α β
+-- With "projection maps":
+def Product.first : Product α β → α :=
+  fun p =>
+  match p with
+  | intro a b => a
+def Product.second : Product α β → β :=
+  fun p =>
+  match p with
+  | intro a b => b
+-- Lean uses the notation `· × ·` in place of `Product`:
+#check Nat × String
+
+-- `inductive` types can have more than one constructor; meet the **sum type**:
+inductive Sum' (α β : Type) : Type where
+  | inl : α → Sum' α β
+  | inr : β → Sum' α β
+-- Lean notation: `· ⊕ ·`
+def addOneOrTimesTwo : Nat ⊕ Nat → Nat :=
+  fun x =>
+  match x with
+  | .inl a => a + 1
+  | .inr b => b * 2
+
+-- A cool use of the sum type is in the **`Option`** type:
+inductive Option' (α : Type) : Type where
+  | none : Option' α
+  | some : α → Option' α
+-- It provides error behaviour:
+def divide : Nat → Nat → Option Nat :=
+  fun numerator divisor =>
+  if divisor = 0
+  then none
+  else some (numerator / divisor)
+
+-- Most impressively, `inductive` types can be **recursive**:
+inductive List' (α : Type) : Type where
+  | nil  : List' α
+  | cons : α → List' α → List' α
+-- Lean notation: `nil = []` and `cons = (· :: ·)`
+#eval (0 :: (1 :: (2 :: (3 :: List.nil))))
+
+-- This is enough power to start capturing mathematical ideas:
+inductive ℕ : Type where
+  | zero : ℕ
+  | succ : ℕ → ℕ  -- `succ n` is "the successor of `n`", aka. `n + 1`.
+
+-- We define functions on `inductive` data types using **recursion**:
+def List.get'? : List α → Nat → Option α :=
+  fun as n =>
+  match as with
+  | [] => none
+  | (a :: as') =>
+    match n with
+    | .zero => a
+    | .succ n' => List.get'? as' n' -- The `1 + n'`th element of `a :: as'` is the `n'`th element of `as'`.
+
+
+
+
 
 /- TEST: Scratch crap that shouldn't be left here -/
 
