@@ -120,7 +120,7 @@ section «notes on `get`»
 end «notes on `get`»
 -- .; Target: +02:00
 
-
+-- NOTE: Ending slides!!
 
 /- SECTION: Other stuff if by some miracle I've got time -/
 section «other stuff»
