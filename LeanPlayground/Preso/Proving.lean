@@ -78,20 +78,37 @@ def add : Nat → Nat → Nat :=
     | succ y' => succ (add x y')  -- `x + (succ y') = succ (x + y')`
 
 theorem add_succ : ∀ (a b : Nat), a + succ b = succ (a + b)
-  := sorry -- NOTE: `by`, `intro`, `rfl`
+  := sorry
+
+-- GOAL: Prove that addition is *associative*:
+--    `∀ (x y z : Nat), x + (y + z) = (x + y) + z`
+--    Our proof is by induction on `z : Nat`.
+
+-- Base case...
+theorem add_assoc.base_case :
+  ∀ (x y : Nat),
+    x + (y + 0) = (x + y) + 0
+  := sorry
+
+-- Inductive step...
+theorem add_assoc.inductive_step:
+  ∀ (x y z : Nat),
+    x + (y + z) = (x + y) + z -- inductive hypothesis
+    → x + (y + succ z) = x + y + succ z
+  := sorry -- `simp only`
 
 theorem add_assoc
   : ∀ (x y z : Nat),
     x + (y + z) = (x + y) + z
-  := sorry -- NOTE: `match`, recursion/induction, `simp only`
+  := sorry -- `match`, `apply`
 section «notes on `add_assoc`»
-  -- Three important things just happened:
+  -- Two important things just happened:
   -- [1.] **induction is recursion.** (huge)
   -- [2.] `simp` **automates** finding arguments for the rules it's given
   -- Automation is a *convenience* and *practicality* thing.
   -- If you're curious, Lean can print out the full function that `simp`
   -- helped automate away:
-  #print add_assoc
+  #print add_assoc.inductive_step
 end «notes on `add_assoc`»
 -- .; Target: +02:30
 
