@@ -13,3 +13,4 @@
 export List (length)
 export Or (inl inr)
 export Nat (zero succ)
+export True (intro)

@@ -1341,7 +1341,6 @@ namespace Numbers.fund_arith
           case pos => -- `h : x.prime`
             exact fund_arith_unique.lemma.prime x ‹_› ps qs ‹_› ‹_› ‹_› ‹_›
           case neg => -- `h : ¬ x.prime`
-            -- TODO: Recurse here
             have : 2 ≤ x := two_le_of_one_le_and_one_ne ‹x ≠ 1› ‹1 ≤ x›
             have ⟨p, q, h_p_prime, h_1_le_q, h_q_lt_x, h_x_eq_pq⟩ := exists_nice_prime_factor ‹2 ≤ x›
             have sih_q := sih q ‹1 ≤ q› ‹q < x›
