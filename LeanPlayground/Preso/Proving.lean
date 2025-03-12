@@ -62,20 +62,20 @@ inductive False' : Prop
 --                    **`proof : statement`**
 
 inductive Or' (p q : Prop) : Prop where
-  | inl : p → Or' p q
-  | inr : q → Or' p q
+  | inl : p → Or' p q -- `inl : p → p ∨ q`
+  | inr : q → Or' p q -- `inr : q → p ∨ q`
 
-section «Or.symm»
+section «`Or.symm`» -- [hide:]
 
-  theorem Or.symm {p q : Prop}
-    : p ∨ q → q ∨ p
-    := sorry
+theorem Or.symm {p q : Prop}
+  : p ∨ q → q ∨ p
+  := sorry
 
-end «Or.symm»
+end «`Or.symm`» -- [hide:]
 
 section «→»
 
-  #check Or.symm
+#check Or.symm
 
 end «→»
 
@@ -93,7 +93,7 @@ set_option autoImplicit false -- *ignore this* [hide:]
 theorem or_True : ∀ (p : Prop), p ∨ True :=
   fun p => inr intro
 -- Decoding `∀`...
-def  or_True' : (p : Prop) → p ∨ True
+def  or_True' : Prop → p ∨ True
   := or_True
 set_option autoImplicit true -- *ignore this* [hide:]
 
@@ -108,19 +108,17 @@ set_option autoImplicit true -- *ignore this* [hide:]
 
 /- SECTION: Interactive/automated theorem proving with `Nat` -/
 
-/-- `add a b` computes the sum `a + b`. -/
+-- Recall...
 def add : Nat → Nat → Nat :=
   fun a b => -- Compute `a + b`
-    match b with
-    | zero    => a                -- `a + 0 = a`
-    | succ b' => succ (add a b')  -- `a + (succ b') = succ (a + b')`
+  match b with
+  | zero    => a                -- `a + 0 = a`
+  | succ b' => succ (add a b')  -- `a + (succ b') = succ (a + b')`
 
-section «`add_succ`»
-
-  theorem add_succ : ∀ (a b : Nat), a + succ b = succ (a + b)
-    := fun a b => rfl
-
-end «`add_succ`»
+section «`add_succ`» -- [hide:]
+theorem add_succ : ∀ (a b : Nat), a + succ b = succ (a + b)
+  := sorry
+end «`add_succ`» -- [hide:]
 
 
 
@@ -135,45 +133,37 @@ end «`add_succ`»
 --    `∀ (x y z : Nat), x + (y + z) = (x + y) + z`
 --    Our proof is by induction on `z : Nat`.
 
-section «base case»
+section «base case» -- [hide:]
+theorem base_case :
+  ∀ (x y : Nat),
+    x + (y + 0) = (x + y) + 0
+  := sorry
+end «base case» -- [hide:]
+section «inductive step» -- [hide:]
+theorem inductive_step :
+  ∀ (x y z : Nat),
+    x + (y + z) = (x + y) + z -- inductive hypothesis
+    → x + (y + succ z) = (x + y) + succ z
+  := sorry -- `simp only`
+end «inductive step» -- [hide:]
+section «`add_assoc`» -- [hide:]
+#check base_case      -- *`x + (y + zero)    = (x + y) + zero   `*
+#check inductive_step -- *`x + (y + succ z') = (x + y) + succ z'`*
+--                       *`  ←  x + (y + z') = (x + y) + z'     `*
+theorem add_assoc
+  : ∀ (x y z : Nat),
+    x + (y + z) = (x + y) + z
+  := sorry -- `match`, `apply`
 
-  theorem base_case :
-    ∀ (x y : Nat),
-      x + (y + 0) = (x + y) + 0
-    := sorry
+section «notes on `add_assoc`» -- [hide:]
 
-end «base case»
+-- Two important things just happened:
+-- [1.] **induction is recursion.** (huge)
+-- [2.] `simp` **automates** menial parts of proof.
+--      Automation is a *convenience* and *practicality* thing.
 
-section «inductive step»
+end «notes on `add_assoc`» end «`add_assoc`» -- [hide:]
 
-  theorem inductive_step :
-    ∀ (x y z : Nat),
-      x + (y + z) = (x + y) + z -- inductive hypothesis
-      → x + (y + succ z) = (x + y) + succ z
-    := sorry -- `simp only`
-
-end «inductive step»
-
-section «`add_assoc`»
-
-  #check base_case      -- *`x + (y + zero)    = (x + y) + zero   `*
-  #check inductive_step -- *`x + (y + succ z') = (x + y) + succ z'`*
-  --                       *`  ←  x + (y + z') = (x + y) + z'     `*
-  theorem add_assoc
-    : ∀ (x y z : Nat),
-      x + (y + z) = (x + y) + z
-    := sorry -- `match`, `apply`
-
-end «`add_assoc`»
-
-section «notes on `add_assoc`»
-
-  -- Two important things just happened:
-  -- [1.] **induction is recursion.** (huge)
-  -- [2.] `simp` **automates** menial parts of proof.
-  --      Automation is a *convenience* and *practicality* thing.
-
-end «notes on `add_assoc`»
 
 
 
@@ -187,16 +177,32 @@ end «notes on `add_assoc`»
 end b -- *ignore this* [hide:]
 namespace has_get -- *ignore this* [hide:]
 /- SECTION: `get` -/
+-- NOTE: This section takes 04:30 minutes to explain properly
 
-#check get? -- *`: List α → Nat → Maybe α`*
-#check get?_in_bounds -- *`: i < length as → get? as i ≠ nothing`*
+section «`Option`» -- [hide:]
+inductive Option' (α : Type) : Type where
+  | none : Option' α
+  | some : α → Option' α
+end «`Option`» -- [hide:]
+section «get?» -- [hide:]
+#check get? -- *`: List α → Nat → Option α`*; ⌘KI for documentation
+#check get?_in_bounds -- *`: i < length as → get? as i ≠ none`*
 
+section «`get`» -- [hide:]
 def get : (as : List α) → (i : Nat) → i < length as → α :=
-  sorry -- `match h_rep: ⋯`, `simp_all` -- *Time permitting*
+  fun as i h =>
+  match h₁: get? as i with
+  | some a => a
+  | none => -- branch never executed: *proof by contradiction*
+    False.elim <| by
+      have h₂ := get?_in_bounds h
+      contradiction
 
-section «notes on `get`»
-/-
-  It is impossible to get an "index out of bounds error" using`get`,
+-- Example use...
+#eval get [42, 1337] 0 «proof that `0 < 2` goes here»
+
+section «notes on `get`» /- [hide:]
+  It is impossible to get an "index out of bounds error" using `get`,
    since using it requries providing a *proof* that the index is in
    bounds.
 
@@ -209,8 +215,7 @@ section «notes on `get`»
    *help us write safer code*.
 
   NOTE: Ending slides!!
--/
-end «notes on `get`»
+-/ end «notes on `get`» end «`get`» -- [hide:]
 
 
 
