@@ -390,3 +390,116 @@ section funny_verification
       -- [done.]
 
 end funny_verification
+
+
+
+/- SECTION: Polymorphic naturality -/
+section «poly nat» namespace «poly nat» -- [hide:]
+
+def natural
+  {F G : Type → Type} [Functor F] [Functor G]
+  (η : (α : Type) → F α → G α)
+  : Prop
+:=
+  ∀ {α β : Type}, ∀ (f : α → β),
+    η β ∘ Functor.map f = Functor.map f ∘ η α
+
+instance i₂ {ε : Type} : Functor (ε × ·) where
+  map f | (e, a) => (e, f a)
+instance i₁ {ε : Type} : Functor (· × ε) where
+  map f | (a, e) => (f a, e)
+
+example
+  : let s {ε : Type} : (α : Type) → ε × α → α × ε :=
+      fun _ (e, a) => (a, e)
+    ; ∀ {ε : Type}, natural (s (ε := ε))
+  := by
+    intro s ε
+    unfold natural
+    intro α β f
+    funext (e, a)
+    unfold Function.comp
+    rfl
+    -- [done.]
+
+open Classical in
+noncomputable def f (α : Type) (a : α) : α :=
+  if h : α = Nat then
+    (h ▸ 69)
+  else
+    a
+
+-- NOTE: Not all polymorphic functions `: (α : Type) → α → α` are `id`.
+example : f Nat 0 ≠ 0 := by
+  unfold f
+  simp only [↓reduceDIte, ne_eq, Nat.add_one_ne_zero, not_false_eq_true]
+  -- [done.]
+
+-- NOTE: Rules for "polymorphic functions" over one type:
+--  Has type `{α : Type} → F α → G α` for some fixed functors `F`, `G`.
+--  `F α` and `G α` are both `inductive` types, and hence are initial algebras
+--    of **polynomial** endofunctors.
+--  Built up from the following operations:
+--    `πᵢ : α × ⋯ × α → fun {α}
+
+open Classical in
+inductive F (α : Type) where
+  | it : (if α = Nat then Unit else Unit × Unit) → F α
+
+#print F
+
+end «poly nat» end «poly nat» -- [hide:]
+
+
+
+/- SECTION: Fuzzy matching -/
+section «fuzzy matching» -- [hide:]
+namespace «fuzzy matching»
+
+  def doAll (actions : List (α → Option α)) (a : α) : Option α :=
+    match actions with
+    | [] =>
+      pure a
+    | (action :: actions) => do
+      doAll actions (← action a)
+
+  def skipJustPast [BEq α] (me : α) : List α → Option (List α)
+    | []        => none
+    | (a :: as) => if a == me then as else skipJustPast me as
+
+  def skipAll [BEq α] (these : List α) : List α → Option (List α) :=
+    doAll (these.map skipJustPast)
+
+  /-- Check whether the `haystack` contains the `needle` as a subsequence -/
+  def _root_.List.fuzzyHas [BEq α] (haystack needle : List α) : Bool :=
+    skipAll needle haystack |>.isSome
+
+  /-- Check whether the `haystack` contains the `needle` as a subsequence -/
+  def _root_.String.fuzzyHas (haystack needle : String) : Bool :=
+    haystack.toList.fuzzyHas needle.toList
+
+  /-- Forget data about a string to make it more amenable to fuzzy matching -/
+  def _root_.String.forget (s : String) : String :=
+          s |>.toList |>.filter Char.isAlphanum |>.map Char.toLower |>.asString
+
+  /-- Check whether the `haystack` contains the `needle` as a subsequence,
+      after forgetting data about each according to `String.forget`
+  -/
+  def _root_.String.looselyHas (haystack needle : String) : Bool :=
+    haystack.forget.fuzzyHas needle.forget
+
+end «fuzzy matching»
+
+namespace «fuzzy matching examples»
+
+  #eval "Amogus sus".fuzzyHas "Amogus"
+  #eval "amogus sus".fuzzyHas "ogsu"
+  #eval "Amogus sus".looselyHas "am Su"
+  #eval "Right Adjoints Preserve Limits".looselyHas "rapl"
+  #eval "Yoneda lemma".looselyHas "rapl"
+  #eval "Yoneda-style arguments".looselyHas "yondus"
+
+end «fuzzy matching examples»
+
+
+end «fuzzy matching» -- [hide:]
